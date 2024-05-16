@@ -2104,7 +2104,7 @@ library(circlize)
 # 准备数据
 chord_data <- country_guide_count %>%
   filter(n > 0) %>%
-  select(Country, Guide, n)%>%
+  select(Guide, Country, n)%>%
   mutate(Country = case_when(
     Country == "European Union" ~ "EU",
     Country == "United States" ~ "US",
@@ -2117,9 +2117,9 @@ chord_data <- country_guide_count %>%
 
 #设定颜色
 grid.col = NULL
-grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#E3CB8F", "#E3CB8F","#E3CB8F",  "#E3CB8F", "#E3CB8F") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
+grid.col[c("China", "India", "EU", "Nigeria","US")] = c("#E3CB8F", "#E3CB8F","#E3CB8F",  "#E3CB8F", "#E3CB8F")#c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
+grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#377EB8","#E41A1C","#4DAF4A","#984EA3","#f7a156") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
 #grid.col[rownames(chord_data)] = c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#f7a156")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
-grid.col[c("China", "India", "EU", "Nigeria","US")] = c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#f7a156")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
 
 
 #第一种
@@ -2181,7 +2181,7 @@ library(circlize)
 # 准备数据
 chord_data <- country_guide_count %>%
   filter(n > 0) %>%
-  select(Country, Guide, n)%>%
+  select(Guide, Country, n)%>%
   mutate(Country = case_when(
     Country == "European Union" ~ "EU",
     Country == "United States" ~ "US",
@@ -2194,9 +2194,9 @@ chord_data <- country_guide_count %>%
 
 #设定颜色
 grid.col = NULL
-grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#D9705A", "#D9705A","#D9705A",  "#D9705A", "#D9705A") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
+grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#377EB8","#E41A1C","#4DAF4A","#984EA3","#f7a156") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
 #grid.col[rownames(chord_data)] = c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#f7a156")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
-grid.col[c("China", "India", "EU", "Nigeria","US")] = c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#f7a156")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
+grid.col[c("China", "India", "EU", "Nigeria","US")] = c("#D9705A", "#D9705A","#D9705A",  "#D9705A", "#D9705A")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
 
 
 #第一种
