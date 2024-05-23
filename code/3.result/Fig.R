@@ -37,6 +37,7 @@ pSRCV<-ggplot() +
   scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.3, 1))+
   #labs(title = "CV")+
   theme(
+    axis.text = element_text(size=12),
     plot.title = element_text(hjust=0.5),
     # axis.line = element_line(color = 'black'),
     # panel.background = element_rect(fill = "white"),#背景设置
@@ -90,6 +91,8 @@ pSRCV2<-ggplot(sp_df_avg, aes(x=Avg_Value, y=lat, color = Month, group = Month))
     legend.position = "none",
     axis.title.y = element_blank(),
     axis.text.y=element_blank(),
+    axis.title.x = element_text(size=16),
+    axis.text.x=element_text(size=12),
     panel.grid = element_blank(),
     axis.ticks.length = unit(-4, "pt") #坐标轴ticks内向
   )
@@ -174,6 +177,7 @@ pAE <- ggplot() +
   #scale_fill_brewer(palette = "RdYlGn")+
   labs(fill="Species Richness")+
   theme(
+    axis.text = element_text(size=12),
     plot.title = element_text(hjust=0.5),
     # axis.line = element_line(color = 'black'),
     # panel.background = element_rect(fill = "white"),#背景设置
@@ -197,7 +201,7 @@ names(AE_df)<-c("lon","lat","sum")
 pAE2<-ggplot(AE_df,aes(x=sum, y=lat),)+
   geom_pointdensity(adjust = 4, size = 0.5)+                              # adjust：设置neighbors范围
   scale_color_distiller(palette = "Spectral", direction = -1)+ # 设置连续型颜色
-  xlab('AE')+
+  xlab('WAE')+
   xlim(c(0,5.5))+
   ylim(c(-56,90))+
   theme_bw()+
@@ -206,6 +210,8 @@ pAE2<-ggplot(AE_df,aes(x=sum, y=lat),)+
   coord_fixed(ratio = 0.105)+ #调整y轴/x轴的比例
   # theme_classic()+
   theme(
+    axis.title.x = element_text(size=16),
+    axis.text.x=element_text(size=12),
     axis.title.y = element_blank(),
     axis.text.y=element_blank(),
     panel.grid = element_blank(),
@@ -264,16 +270,19 @@ library(dplyr)
 # thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
 # outBreak2 <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
 # plot(outBreak2)
-# overEntropy <- rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
-# global(overEntropy,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+overEntropy <- rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
+global(overEntropy,quantile,probs=seq(0, 1, 0.05),na.rm=T)
 
 
 `%notin%` <- Negate(`%in%`)
 library(lubridate)
 outBreak1 <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv') %>% subset(Diagnosis.status=='Confirmed'&Animal.type%in%c('Domestic','Wild'))
+
 outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
 outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
-outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))
+outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))   #这一句是用来运行全部的
+#outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')  #这一句是用来仅运行H5N1-HPAI的
+
 outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
 
 addGeom <- cellFromXY(globalRaster,outBreak1[,c('Longitude','Latitude')]) %>% 
@@ -290,10 +299,10 @@ ggplot() +
   geom_spatraster(data = plotEntropy) +
   geom_spatvector(data=coast,fill=NA)+
   #coord_sf(crs = crs,xlim=c(-160,180),ylim=c(-56,90))+
-  geom_spatvector(data=outBreak2,size=2, shape = 21,color='grey',fill='#ff6699',stroke = 0.3)+   #, aes(color='Outbreak of\navian influenza'
+  geom_spatvector(data=outBreak2,size=2, shape = 4,color='#ff4f4c',fill='#f26c6a', alpha = 0.8,stroke = 0.3)+   #shape = 21是圆圈，shape = 4是×
   theme_bw()+
   #scale_color_manual(values='#fc4e4e', labels='Outbreak of\navian influenza') +
-  scale_fill_gradient(low = "grey",high = "cyan" ,space = "Lab",n.break=2,
+  scale_fill_gradient(low = "lightgrey",high = "yellow" ,space = "Lab",n.break=2,
                       labels=c('Low risk','High risk'),na.value='white')+
   guides(
     fill=guide_legend()  )+
@@ -326,6 +335,8 @@ outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
 # r <- outBreak[outBreak$Longitude>60&outBreak$Longitude<120&outBreak$Latitude>35&outBreak$Latitude<60,]
 #outBreak1 <- subset(outBreak1,outBreak1$h_label%in%c('H9N2','H5N6'))
 outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))
+#outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')
+
 
 outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
 
@@ -357,10 +368,11 @@ plot(dfroc1,col="red",#颜色
      expand=c(0,0),
      print.thres=TRUE,#添加截点和95%CI
      grid=c(0.2,0.2),grid.col=c("lightgrey","lightgrey"),
-     cex.main=1.5,  # 主标题字体放大1.5倍
-     cex.sub=1.5,   # 副标题字体放大1.5倍
-     cex.axis=1.5,  # 坐标轴刻度字体放大1.5倍
-     cex.lab=1.5)#网格线设置
+     #cex.text=1.5,
+     cex.main=1,  # 主标题字体放大1.5倍
+     cex.sub=1,   # 副标题字体放大1.5倍
+     cex.axis=1,  # 坐标轴刻度字体放大1.5倍
+     cex.lab=1)#网格线设置
 
 
 
@@ -380,27 +392,45 @@ FI <- 2*((recall*precise)/(recall+precise))  ;FI
 
 
 #c###########
-#health expenditure
+#新accuracy
+result_country <- fread('/root/autodl-tmp/humPoulResult/data/result_country.csv')
 healthData <- fread('/root/autodl-tmp/humPoulResult/data/health expenditure.csv',header = T,drop=c(5:44,66:69))
 globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
-result_df2<-fread("/root/autodl-tmp/result/validationCountry.csv")
 countryData <- as.data.frame(globalSHP) %>% .[,c('NAME_LONG','POP_EST','POP_RANK','ECONOMY','INCOME_GRP','CONTINENT','GDP_MD')]
-result_df3 <- left_join(result_df2,countryData,by=c('country'='NAME_LONG'))
+result_df3 <- left_join(result_country,countryData,by=c('country'='NAME_LONG'))
 result_df4 <- left_join(result_df3,healthData,by=c('country'='Country Name')) %>% na.omit()
-result_df4$health <- rowMeans(result_df4[,23:43])
+result_df4$health <- rowMeans(result_df4[,22:42])
+result_df4$per <- (result_df4$df/result_df4$alldf)
+
 # result_df3$tt <- result_df3$TP+result_df3$FN
 # result_df4 <- subset(result_df3,result_df3$tt>10)
 
-ggplot(data=result_df4)+
-  geom_point(aes(log(health),accuracy,color=CONTINENT,size=POP_EST,alpha=0.5))+
-  geom_smooth(aes(log(health),accuracy),method = "lm", formula = y ~ I(x^-1))+
-  xlab('Health (log)')+
+#比较GDP和health哪个好：GDP更好
+p1<-ggplot(data=result_df4)+
+  geom_point(aes(log(GDP_MD),accuracy,color=CONTINENT,size=POP_EST,alpha=0.5))+
+  geom_smooth(aes(log(GDP_MD),accuracy),method = "lm", formula = y ~ I(x^-1))+
+  xlab('GDP_MD (log)')+
   ylab('Accuracy')+
   theme_bw()+
   theme(
     panel.background = element_blank()
   )
 
+p2<-ggplot(data=result_df4)+
+  geom_point(aes(log(health),accuracy,color=CONTINENT,size=POP_EST,alpha=0.5))+
+  geom_smooth(aes(log(health),accuracy),method = "lm", formula = y ~ I(x^-1))+
+  xlab('health (log)')+
+  ylab('Accuracy')+
+  theme_bw()+
+  theme(
+    panel.background = element_blank()
+  )
+
+library(patchwork)
+p1+p2
+
+
+#用GDP
 # 计算POP_EST的十个分位数
 pop_quantiles <- quantile(result_df4$POP_EST, probs=seq(0, 1, by=0.1), na.rm = TRUE)
 
@@ -414,34 +444,135 @@ result_df4 <- mutate(result_df4, POP_EST_label = cut(POP_EST, breaks = c(35000, 
 result_df4 <- result_df4[order(result_df4$CONTINENT, -result_df4$POP_EST), ]
 
 # 选择每个大洲人口排名前三的国家
-top_countries_by_continent <- result_df4 %>%
-  group_by(CONTINENT) %>%
-  slice_max(POP_EST, n = 3) %>%
-  ungroup() %>%
-  dplyr::select(country)
-top_countries_by_continent<-c(top_countries_by_continent)
-
-result_dfc <- result_df4[result_df4$country %in% top_countries_by_continent$country, ]   #[-11]为了去掉Canada
-# 使用 lm() 函数进行线性拟合
-linear_model <- lm(accuracy ~ log(POP_EST), data = result_df4)
-summary(linear_model)
+# top_countries_by_continent <- result_df4 %>%
+#   group_by(CONTINENT) %>%
+#   slice_max(POP_EST, n = 3) %>%
+#   ungroup() %>%
+#   dplyr::select(country)
+# top_countries_by_continent<-c(top_countries_by_continent)
+# 
+# result_dfc <- result_df4[result_df4$country %in% top_countries_by_continent$country, ]   #[-11]为了去掉Canada
+# # 使用 lm() 函数进行线性拟合
+# linear_model <- lm(accuracy ~ log(POP_EST), data = result_df4)
+# summary(linear_model)
 # 绘制图形
 size_labels <- c("3.5 - 25", "25 - 497", "497 - 780", "780 - 1050", "1050 - 1470", "1470 - 2280", "2280 - 3480", "3480 - 4970", "4970 - 10350", "10350 - 139780")
 my_formula <- y ~ x
-ggplot(result_df4, aes(log(health), accuracy, color=CONTINENT)) +
+library(scales)
+my_trans <- trans_new(
+  name = "custom",
+  transform = function(x) x + 0.1 * (x - 1),
+  inverse = function(x) (x - 1) / 1.1 + 1
+)
+#GDP
+ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_size), alpha=0.5) +
-  geom_text(data=result_dfc, aes(label=country, x=log(health), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  #geom_text(data=result_df4, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
-  geom_smooth(aes(log(health),accuracy),fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
-  xlab('Health expenditure per capita (Log)') +
+  geom_smooth(aes(log(GDP_MD),accuracy),fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
+  xlab('GDP (Log)') +
   ylab('Accuracy') +
+  ylim(c(0,1))+
+  xlim(c(7.5,17))+
   theme_bw() +
   theme(panel.background = element_blank(),
         text = element_text(size=18)) +
-  scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
+  #scale_size_continuous(range = c(1, 15), breaks=seq(1, 15, by=1.5), labels=size_labels)+
+  #scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
+  scale_size_continuous(
+    range = c(1, 10.9), 
+    breaks = 1:10, 
+    labels = size_labels,
+    trans = my_trans
+  )+
   guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
          color=guide_legend(title="Continent"))
+
+
+#per!!
+result_country2 <- fread('/root/autodl-tmp/humPoulResult/data/result_country2.csv')
+healthData <- fread('/root/autodl-tmp/humPoulResult/data/health expenditure.csv',header = T,drop=c(5:44,66:69))
+globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
+countryData <- as.data.frame(globalSHP) %>% .[,c('NAME_LONG','POP_EST','POP_RANK','ECONOMY','INCOME_GRP','CONTINENT','GDP_MD')]
+result_df3 <- left_join(result_country2,countryData,by=c('country'='NAME_LONG'))
+result_df4 <- left_join(result_df3,healthData,by=c('country'='Country Name')) %>% na.omit()
+result_df4$per <- (result_df4$df/result_df4$alldf)
+
+
+# 计算POP_EST的十个分位数
+pop_quantiles <- quantile(result_df4$POP_EST, probs=seq(0, 1, by=0.1), na.rm = TRUE)
+# 将POP_EST映射到1到10的大小
+result_df4$POP_EST_size <- findInterval(result_df4$POP_EST, vec = pop_quantiles)
+result_df4$POP_EST <- as.numeric(result_df4$POP_EST)
+result_df4 <- mutate(result_df4, POP_EST_label = cut(POP_EST, breaks = c(35000, 250000, 4970000, 7800000, 10500000, 14700000, 22800000, 34800000, 49700000, 103500000, 1397800000),
+                                                     labels = c("3.5 - 25", "25 - 497", "497 - 780", "780 - 1050", "1050 - 1470", "1470-2280", "2280 - 3480", "3480 - 4970", "4970 - 10350", "10350 - 139780")))
+
+# 按大洲和人口排序
+result_df4 <- result_df4[order(result_df4$CONTINENT, -result_df4$POP_EST), ]
+
+# # 选择每个大洲人口排名前三的国家
+# top_countries_by_continent <- result_df4 %>%
+#   group_by(CONTINENT) %>%
+#   slice_max(POP_EST, n = 3) %>%
+#   ungroup() %>%
+#   dplyr::select(country)
+# top_countries_by_continent<-c(top_countries_by_continent)
+# result_dfc <- result_df4[result_df4$country %in% top_countries_by_continent$country, ]   #[-11]为了去掉Canada
+
+
+size_labels <- c("3.5 - 25", "25 - 497", "497 - 780", "780 - 1050", "1050 - 1470", "1470 - 2280", "2280 - 3480", "3480 - 4970", "4970 - 10350", "10350 - 139780")
+my_formula <- y ~ x
+library(scales)
+my_trans <- trans_new(
+  name = "custom",
+  transform = function(x) x + 0.1 * (x - 1),
+  inverse = function(x) (x - 1) / 1.1 + 1
+)
+
+result_df5<-result_df4[result_df4$country!="Cyprus",]
+ggplot(result_df5, aes(per, accuracy, color=CONTINENT)) +
+  geom_point(aes(size=POP_EST_size), alpha=0.5) +
+  geom_text(data=result_df5, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
+  #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
+  geom_smooth(aes(per,accuracy),fill="lightgrey",color = "grey",method = "loess", formula = y ~ I(x^-1))+
+  xlab('Prevalence') +
+  ylab('Accuracy') +
+  theme_bw() +
+  theme(panel.background = element_blank(),
+        text = element_text(size=18),
+        legend.position = 'right') +
+  #scale_size_continuous(range = c(1, 15), breaks=seq(1, 15, by=1.5), labels=size_labels)+
+  #scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
+  scale_size_continuous(
+    range = c(1, 10.9), 
+    breaks = 1:10, 
+    labels = size_labels,
+    trans = my_trans
+  )+
+  guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
+         color=guide_legend(title="Continent"))
+
+
+# ggplot(result_df4, aes((GDP_MD/POP_EST), accuracy, color=CONTINENT)) +
+#   geom_point(aes(size=POP_EST_size), alpha=0.5) +
+#   geom_text(data=result_df4, aes(label=country, x=(GDP_MD/POP_EST), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+#   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
+#   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
+#   geom_smooth(aes((GDP_MD/POP_EST),accuracy),fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
+#   xlab('GDP per capital (Log)') +
+#   ylab('Accuracy') +
+#   theme_bw() +
+#   theme(panel.background = element_blank(),
+#         text = element_text(size=18)) +
+#   scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
+#   guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
+#          color=guide_legend(title="Continent"))
+
+
+
+
 
 # globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
 # result_df2<-fread("/root/autodl-tmp/result/validationCountry.csv")
@@ -676,7 +807,9 @@ plot_res <- ggplot(popentrpoul_df2) +
   #theme_minimal()+
   theme_bw()+
   theme(
-    legend.position="none"
+    legend.position="none",
+        axis.text = element_text(size=12),
+    panel.grid.major = element_blank(),  # 删除主要的灰色虚线
   )
 print(plot_res)
 
@@ -696,7 +829,7 @@ poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(glo
 
 #####国家矢量
 globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
-globalSHP2 <- terra::aggregate(globalSHP,'name_r')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
 
 
 ###取阈值
@@ -719,7 +852,7 @@ for (i in 51:100) {           #6:10
   hotArea2 <- ifel(hotArea==3,1,NA)
   #区域统计
   hotResult <- zonal(hotArea,z=globalSHP2,'sum',na.rm=T)
-  hotResult2 <- data.table(countryName=globalSHP2$name_r,hotSum=hotResult$popd2015_30,threshold=i-1)   #threshold=(i-1)*10
+  hotResult2 <- data.table(countryName=globalSHP2$name_ec,hotSum=hotResult$popd2015_30,threshold=i-1)   #threshold=(i-1)*10
   allData <- rbind(allData,hotResult2)
   # #计算面积
   # crs(hotArea2) <- "+proj=aea +lat_1=first_standard_parallel +lat_2=second_standard_parallel +lat_0=latitude_of_origin +lon_0=central_meridian +x_0=false_easting +y_0=false_northing +datum=WGS84"   #Albers Conic Equal Area投影
@@ -759,7 +892,11 @@ ggplot(hotentrpoppoul_df) +
   #theme_minimal()+
   theme_bw()+
   theme(
-    legend.position="none"
+    legend.position="none",
+    axis.text = element_text(size=12),
+    panel.grid.major = element_blank(),  # 删除主要的灰色虚线
+    #panel.grid.minor = element_blank(),   # 删除次要的灰色虚线
+    #panel.background = element_rect(fill="white")#背景设置
   )
 
 #各大洲求出暴露的人口总数和家禽总数
@@ -814,6 +951,7 @@ pNumpoul_hotAND<-ggplot(NumhotAND_result, aes(x="", y=Numpoul_hotAND, fill=conti
   labs(fill="Continent")
 pNumpoul_hotAND
 
+
 pNumpop_hotAND+pNumpoul_hotAND
 
 
@@ -823,13 +961,15 @@ Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
 
 globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
-globalSHP2 <- terra::aggregate(globalSHP,'name_r')
-countries <- c("China", "India", "European Union", "Nigeria", "United States",
-               "Thailand", "Indonesia", "Ethiopia", "Russian Federation", "Myanmar",
-               "Japan", "Pakistan", "Vietnam", "Mexico", "Brazil",
-               "Uganda", "Ukraine", "Burkina Faso", "United Kingdom", "Philippines")
-selectedCountries <- globalSHP2[globalSHP2$name_r %in% countries,]
-countryRaster <- rasterize(selectedCountries, Entropy, field='name_r')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+# countries <- c("China", "India", "European Country", "Nigeria", "United States",
+#                "Thailand", "Indonesia", "Ethiopia", "Russian Federation", "Myanmar",
+#                "Japan", "Pakistan", "Vietnam", "Mexico", "Brazil",
+#                "Uganda", "Ukraine", "Burkina Faso", "United Kingdom", "Philippines")
+# selectedCountries <- globalSHP2[globalSHP2$name_ec %in% countries,]
+# countryRaster <- rasterize(selectedCountries, Entropy, field='name_ec')
+countryRaster <- rasterize(globalSHP2, Entropy, field='name_ec')
+
 
 Numpop_hotAND<-hotAND*popd2015; plot(Numpop_hotAND)
 Numpoul_hotAND<-hotAND*poul2015; plot(Numpoul_hotAND)
@@ -892,8 +1032,8 @@ Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
 
 globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
-globalSHP2 <- terra::aggregate(globalSHP,'name_r')
-cRaster <- rasterize(globalSHP2,Entropy,field='name_r')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+cRaster <- rasterize(globalSHP2,Entropy,field='name_ec')
 
 Numpop_hotArea<-hot60Area2*popd2015; plot(Numpop_hotArea)
 Numpoul_hotArea<-hot60Area2*poul2015; plot(Numpoul_hotArea)
@@ -927,10 +1067,14 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 #Fig4 Mantel test------------
 #计算分功能群活动熵###############
 
-#分科计算活动熵
+#计算中国的分科计算活动熵
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+ChinaSHP <- subset(globalSHP,globalSHP$name_ec=="China")
+
 allDf2 <- fread('/root/autodl-tmp/zyresult/allDf786_reclass.csv')
+fam5China<-c("Anatidae","Scolopacidae","Laridae","Ardeidae","Charadriidae")
 spName <- basename(speciesPixelNumPath2) %>% str_sub(.,1,-5)
-for (fam in unique(allDf2$`Family`)) {
+for (fam in fam5China) {          #unique(allDf2$`Family`)
   famName <- allDf2[allDf2$`Family`==fam,]
   paths <- speciesPixelNumPath2[spName%in%famName$LatName]
   monthNum <- rast(paths) %>% sum(na.rm=T)
@@ -942,7 +1086,8 @@ for (fam in unique(allDf2$`Family`)) {
     return(y)
   })
   actEntropy <- rast(calEntropy) %>% sum(na.rm = T)
-  #writeRaster(actEntropy,paste0('/root/autodl-tmp/humPoulResult/data/AE_data/AE_',fam,'.tif'))
+  China_actEntropy<-crop(actEntropy, ChinaSHP) %>% mask(., ChinaSHP)
+  writeRaster(China_actEntropy,paste0('/root/autodl-tmp/humPoulResult/data/AE_data/ChinaAE_',fam,'.tif'))
 }
 
 #分科CH计算活动熵
@@ -1047,7 +1192,7 @@ otherClimateData<-otherClimateData[[c("NDVI", "NDWI","LAI","Npp","nightLight", "
 Global_corData <- c(AE, spNum, Allmonth,spNum_CV,
                     bio12prec,bio1temp, below0Days,
                     GPP, GPP_CV ,otherClimateData, pop_log, poul_log)
-countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") %>% rasterize(.,globalRaster,field='name_r')
+countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") %>% rasterize(.,globalRaster,field='name_ec')
 Global_corData_df <- c(Global_corData,countryRaster) %>% as.data.frame(xy=T)
 names(Global_corData_df)<-c('Lontitude', 'Latitude' ,'AE','Species Richness', "Cumulative Species-months", 'CV of Species Richness',
                             'Precipitation', 'Temperature', 'Frost Days',
@@ -1058,7 +1203,7 @@ names(Global_corData_df)<-c('Lontitude', 'Latitude' ,'AE','Species Richness', "C
                             'Country')
 
 Global_corData_df <- Global_corData_df %>%
-  dplyr::select('AE','Species Richness', "Cumulative Species-months", 'CV of Species Richness',
+  dplyr::select(#'AE','Species Richness', "Cumulative Species-months", 'CV of Species Richness',
          'Lontitude', 'Latitude' ,'Precipitation', 'Temperature', 'Frost Days',
          'GPP', 'CV of GPP',"Npp", "NDVI", "NDWI","LAI",
          'Light Density', 'Road Density', 'Population(Log)', 'Poultry(Log)',
@@ -1069,18 +1214,18 @@ summary(Global_corData_df)
 #2.功能群活动熵数据
 listFunc<-list.files('/root/autodl-tmp/humPoulResult/data/Mantel_data/birdFuncAE',full.names = T)
 AE_Func<-rast(listFunc)%>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
-countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") %>% rasterize(.,globalRaster,field='name_r')
+countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") %>% rasterize(.,globalRaster,field='name_ec')
 Global_birdEntropy_df <- c(AE_Func,countryRaster) %>% as.data.frame()
 
-names(Global_birdEntropy_df) <- c('Large wading birds','Others','Seabirds','Shorebirds','Waterfowls',"Country")
+names(Global_birdEntropy_df) <- c('wadingbirds','unclassified','seabirds','shorebirds','waterfowls',"Country")
 Global_birdEntropy_df <- Global_birdEntropy_df%>%
-  dplyr::select('Seabirds','Shorebirds','Waterfowls','Large wading birds','Others',"Country")
+  dplyr::select('seabirds','shorebirds','waterfowls','wadingbirds','unclassified',"Country")
 summary(Global_birdEntropy_df)
 
 
 #计算分国家的mantel结果------------
 #Global_birdEntropy_df5<-subset(Global_birdEntropy_df, Global_birdEntropy_df$Country %in%`Contry5c`)
-Contry5c <-c('China','India','European Union','Nigeria','United States')
+Contry5c <-c('China','India','European Country','Nigeria','United States')
 All5corData_result <- data.table()
 All5mantel_result <- data.table()
 for (con in Contry5c) {
@@ -1096,8 +1241,8 @@ for (con in Contry5c) {
   con_birdEntropy_df_clean2<-mutate(con_corData_df_clean, Country=con)
   All5corData_result<-rbind(All5corData_result,con_birdEntropy_df_clean2)
   #求mantel
-  mantel <- mantel_test(con_corData_df_clean,   ## 分类数据 con_corData_df_clean
-                        con_birdEntropy_df_clean,    ## 影响因子数据 con_birdEntropy_df_clean
+  mantel <- mantel_test(con_birdEntropy_df_clean,    ## 影响因子数据 con_birdEntropy_df_clean
+                        con_corData_df_clean,   ## 分类数据 con_corData_df_clean
                         spec_select = list(
                           seabirds = 1,
                           shorebirds = 2,
@@ -1123,7 +1268,7 @@ library(linkET)
 
 China_corData_df_clean<-fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5corData_result.csv')%>%
   subset(.,.$Country=='China') %>% dplyr::select(-ncol(.))
-China_mantel <- fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/All5mantel_result.csv')%>%
+China_mantel <- fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5mantel_result.csv')%>%
   subset(.,.$Country=='China') %>% dplyr::select(-ncol(.))
 
 head(China_mantel)
@@ -1152,8 +1297,8 @@ China_mantel2 <- China_mantel2 %>%
 qcorrplot(China_corData_df_clean, type = "lower", diag = FALSE) +  #China_corData_df_clean
   geom_square() +   ## 相关性热图的形状
   ## 
-  geom_couple(aes(colour = rd2, linetype = pd), size=1,
-              data = China_mantel2, label.size = 6,
+  geom_couple(aes(colour = rd, linetype = pd), size=1,
+              data = China_mantel, label.size = 6,
               curvature = nice_curvature()) +
   ## 颜色参数调整
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, "RdBu")) +
@@ -1224,7 +1369,7 @@ climatedata_long2$Attribute<-factor(climatedata_long2$Attribute,levels = c("Long
 #####植被指标的数据
 
 vegetationdata <- data.frame(
-  Country = c("China", "India", "European Union", "Nigeria", "United States"),
+  Country = c("China", "India", "European Country", "Nigeria", "United States"),
   GPP = c(0.657613199, 0.158686035, -0.023214674, -0.405162254, 0.69214518),
   CV_of_GPP = c(-0.65866009, -0.509137502, 0.051341938, 0.31214534, -0.428621043),
   NPP = c(0.628789993, -0.044672024, 0.069611827, -0.430419677, 0.714024786),
@@ -1263,7 +1408,7 @@ vegetationdata_long2$Attribute<-factor(vegetationdata_long2$Attribute,levels = c
 
 #####人类活动
 humandata <- data.frame(
-  Country = c("China", "United States", "India", "European Union", "Nigeria"),
+  Country = c("China", "United States", "India", "European Country", "Nigeria"),
   Light_Density = c(0.41433085, 0.494451945, 0.326066598, 0.09459512, 0.055669773),
   Road_Density = c(0.404520561, 0.377699523, 0.212541503, 0.268782901, 0.171802425),
   Population_Log = c(0.675935177, 0.637477794, 0.654811034, 0.283260059, 0.083748191),
@@ -1328,9 +1473,9 @@ p2<-ggplot(vegetationdata_long2, aes(x = Attribute, y = Value, fill = reorder(Co
   geom_segment(aes(x = 4.55, xend = 5.45, y = -0.367204322), linetype = "dashed", color = "#ffbcbc",size=0.3) +   #NDWI
   geom_segment(aes(x = 5.55, xend = 6.45, y = 0.130518149), linetype = "dashed", color = "#ffbcbc",size=0.3) +   #LAI
   #facet_wrap(~ Country, scales = "free") +
-  scale_fill_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Union"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
+  scale_fill_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Country"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
   #scale_fill_manual(values = c("#377EB8", "#E41A1C", "#4DAF4A", "#984EA3", "#FF7F00")) +  #FF7F00
-  #scale_fill_manual(values = c("India"="#4C8BC0", "China"="#C75C64", "European Union"="#32A852", "Nigeria"="#984EA3", "United States"="#F0B57D")) +  #F0B57D
+  #scale_fill_manual(values = c("India"="#4C8BC0", "China"="#C75C64", "European Country"="#32A852", "Nigeria"="#984EA3", "United States"="#F0B57D")) +  #F0B57D
   theme_bw() +
   #scale_y_continuous(limits = c(0,0.8))+
   labs(title = "Vegetation Indicators",x = NULL, y = NULL, fill = NULL) +
@@ -1346,9 +1491,9 @@ p3<-ggplot(humandata_long2, aes(x = Attribute, y = Value, fill = reorder(Country
   geom_segment(aes(x = 1.55, xend = 2.45, y = 0.241559629), linetype = "dashed", color = "#ffbcbc",size=0.3) +   #road
   geom_segment(aes(x = 2.55, xend = 3.45, y = 0.354607465), linetype = "dashed", color = "#ffbcbc",size=0.3) +   #Pop
   geom_segment(aes(x = 3.55, xend = 4.45, y = 0.267712171), linetype = "dashed", color = "#ffbcbc",size=0.3) +   #poul
-  scale_fill_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Union"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
+  scale_fill_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Country"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
   #scale_fill_manual(values = c("#377EB8", "#E41A1C", "#4DAF4A", "#984EA3", "#FF7F00")) +  #FF7F00
-  #scale_fill_manual(values = c("India"="#4C8BC0", "China"="#C75C64", "European Union"="#32A852", "Nigeria"="#984EA3", "United States"="#F0B57D")) +  #F0B57D
+  #scale_fill_manual(values = c("India"="#4C8BC0", "China"="#C75C64", "European Country"="#32A852", "Nigeria"="#984EA3", "United States"="#F0B57D")) +  #F0B57D
   theme_bw() +
   scale_y_continuous(limits = c(0,0.8))+
   labs(title = "Human Activity Indicators",x = NULL, y = NULL, fill = NULL) +
@@ -1372,9 +1517,9 @@ poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(glo
 
 
 globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
-globalSHP2 <- terra::aggregate(globalSHP,'name_r')
-Con_5 <- subset(globalSHP2, globalSHP2$name_r %in% c("China", "India", "European Union", "Nigeria", "United States"))
-cRaster <- rasterize(Con_5,Entropy,field='name_r')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Con_5 <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))
+cRaster <- rasterize(Con_5,Entropy,field='name_ec')
 All5_df <- c(Entropy,popd2015,poul2015,cRaster) %>% terra::as.data.frame() %>%na.omit()
 names(All5_df)<-c("entr","pop","poul","country")
 
@@ -1387,7 +1532,7 @@ All5_df1 <- All5_df[!(All5_df$pop < 0.0001),]
 
 p1<-ggplot(data = All5_df1, aes(x = entr, y = log(pop), color = country)) +
   geom_point(size=1) +  #,shape=21
-  scale_color_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Union"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
+  scale_color_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Country"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
   #scale_color_manual(values = c("#377EB8", "#E41A1C", "#4DAF4A", "#984EA3", "#FF7F00")) +
   geom_smooth(method = "lm",linewidth=0.5, se = T, lty=5,aes(color = country)) +
   #geom_smooth(method = "lm", se = T, color = "black", linetype = "dashed") +  # 全部点的趋势线，黑色
@@ -1433,7 +1578,7 @@ ggplot(data = All5_df1, aes(x = sum, y = pop, color = country)) +
 #统计
 india_count <- nrow(All5_df1[All5_df1$country == 'India', ]); india_count  # 1195
 China_count <- nrow(All5_df1[All5_df1$country == 'China', ]); China_count  # 3798
-EU_count <- nrow(All5_df1[All5_df1$country == 'European Union', ]); EU_count  # 2273
+EU_count <- nrow(All5_df1[All5_df1$country == 'European Country', ]); EU_count  # 2273
 Nigeria_count <- nrow(All5_df1[All5_df1$country == 'Nigeria', ]); Nigeria_count  # 330
 US_count <- nrow(All5_df1[All5_df1$country == 'United States', ]); US_count  # 3770
 
@@ -1456,7 +1601,7 @@ z <- b / SE   ;z
 p <- model_summary$coefficients[2, 4];  p
 stat_text <- paste("b =", round(b, 2), "\nSE =", round(SE, 2), "\nz =", round(z, 2), "\np =", round(p, 2));stat_text
 
-model <- lm(log(pop) ~ entr, data = All5_df1[All5_df1$country == 'European Union', ])
+model <- lm(log(pop) ~ entr, data = All5_df1[All5_df1$country == 'European Country', ])
 model_summary <- summary(model);model_summary  # 获取模型摘要
 b <- model_summary$coefficients[2, 1] ; b # 提取回归系数b和标准误差SE
 SE <- model_summary$coefficients[2, 2];SE
@@ -1487,7 +1632,7 @@ All5_df2 <- All5_df[!(All5_df$poul < 0.0001) ,]
 
 p2<-ggplot(data = All5_df2, aes(x = entr, y = log(poul), color = country)) +
   geom_point(size=1) +  #,shape=21
-  scale_color_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Union"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
+  scale_color_manual(values = c("India"="#377EB8", "China"="#E41A1C", "European Country"="#4DAF4A", "Nigeria"="#984EA3", "United States"="#f7a156")) +  #FF7F00
   #scale_color_manual(values = c("#377EB8", "#E41A1C", "#4DAF4A", "#984EA3", "#FF7F00")) +
   geom_smooth(method = "lm",linewidth=0.5, se = T, lty=5,aes(color = country)) +
   #geom_smooth(method = "lm", se = T, color = "black", linetype = "dashed") +  # 全部点的趋势线，黑色
@@ -1535,7 +1680,7 @@ ggplot(data = All5_df2, aes(x = entr, y = poul, color = country)) +
 #统计
 india_count <- nrow(All5_df2[All5_df2$country == 'India', ]); india_count  # 1114
 China_count <- nrow(All5_df2[All5_df2$country == 'China', ]); China_count  # 3817
-EU_count <- nrow(All5_df2[All5_df2$country == 'European Union', ]); EU_count  # 2163
+EU_count <- nrow(All5_df2[All5_df2$country == 'European Country', ]); EU_count  # 2163
 Nigeria_count <- nrow(All5_df2[All5_df2$country == 'Nigeria', ]); Nigeria_count  # 300
 US_count <- nrow(All5_df2[All5_df2$country == 'United States', ]); US_count  # 4353
 
@@ -1557,7 +1702,7 @@ z <- b / SE   ;z
 p <- model_summary$coefficients[2, 4];  p
 stat_text <- paste("b =", round(b, 2), "\nSE =", round(SE, 2), "\nz =", round(z, 2), "\np =", round(p, 2));stat_text
 
-model <- lm(log(poul) ~ entr, data = All5_df2[All5_df2$country == 'European Union', ])
+model <- lm(log(poul) ~ entr, data = All5_df2[All5_df2$country == 'European Country', ])
 model_summary <- summary(model);model_summary  # 获取模型摘要
 b <- model_summary$coefficients[2, 1] ; b # 提取回归系数b和标准误差SE
 SE <- model_summary$coefficients[2, 2];SE
@@ -1624,8 +1769,9 @@ poul_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/poul_log
 pop<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
 poul<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
 
-countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") 
-Con_5Raster <- subset(countryRaster, countryRaster$name_r %in% c("China", "India", "European Union", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_r')
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Con_5Raster <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_ec')
 
 Global_birdEntropy_df <- c(AE_Func,pop_log,poul_log,pop,poul,Con_5Raster) %>% as.data.frame()
 
@@ -1645,8 +1791,9 @@ poul_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/poul_log
 pop<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
 poul<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
 
-countryRaster <- vect("/root/autodl-tmp/zyresult/Con_dissoEU.shp") 
-Con_5Raster <- subset(countryRaster, countryRaster$name_r %in% c("China", "India", "European Union", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_r')
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Con_5Raster <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_ec')
 
 Global_CHEntropy_df <- c(AE_FuncCH,pop_log,poul_log,pop,poul,Con_5Raster) %>% as.data.frame()
 
@@ -1678,7 +1825,7 @@ result_chpop <- Global_CHEntropy_df3[value>0,.(slope=summary(lm(`Population(Log)
 
 
 ######循环：分别与人口\家禽进行线性拟合------------
-Contry5c <-c('China','India','European Union','Nigeria','United States')
+Contry5c <-c('China','India','European Country','Nigeria','United States')
 
 Global_birdEntropy_df5_long <- gather(Global_birdEntropy_df, key = "Variable", value = "Value",
                     -`Population(Log)`, -`Poltry(Log)`, -`pop`, -`poul`, -`Country`) %>%na.omit()
@@ -1696,7 +1843,7 @@ summary(Global_CHEntropy_df5_long)#CH
 All5_poppoulresults_df <- data.frame(Variable = character(),  b = numeric(),  SE = numeric(), b_SE = character(), z = numeric(),  P = numeric(),  R2 = numeric(), 
                                      Country = character(), Type = character(), Part = character()  ,stringsAsFactors = FALSE)
 
-Contry5c <-c('China','India','European Union','Nigeria','United States')
+Contry5c <-c('China','India','European Country','Nigeria','United States')
 parts <- c('pop','poul')
 types <- c('All', 'CH')
 variables <- c('Seabirds', 'Shorebirds', 'Waterfowls', 'Large wading birds', 'Others')
@@ -1845,7 +1992,7 @@ popall+popch
 
 #####饼图，最重要的------------
 All5_poppoulresults_df<-fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/All5_poppoulresults_df.csv')
-lineardatalong <- All5_poppoulresults_df
+lineardatalong <- All5_poppoulresults_df %>%data.table()
 lineardatalong$r <- sqrt(lineardatalong$R2)
 lineardatalong<-lineardatalong %>%
   mutate(Pd = cut(P, breaks = c(-Inf, 0.01, 0.05, Inf),
@@ -1916,11 +2063,11 @@ p1+p2
 world.map <- rnaturalearth::ne_countries(returnclass = "sf") %>% filter(continent != "Antarctica")
 
 Con_popentrpoul_sf <- st_read("/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp");head(Con_popentrpoul_sf)
-Con_China<-subset(Con_popentrpoul_sf,name_r=="China")
-Con_India<-subset(Con_popentrpoul_sf,name_r=="India") 
-Con_EU<-subset(Con_popentrpoul_sf,name_r=="European Union")
-Con_Nigeria<-subset(Con_popentrpoul_sf,name_r=="Nigeria")
-Con_US<-subset(Con_popentrpoul_sf,name_r=="United States") 
+Con_China<-subset(Con_popentrpoul_sf,name_ec=="China")
+Con_India<-subset(Con_popentrpoul_sf,name_ec=="India") 
+Con_EU<-subset(Con_popentrpoul_sf,name_ec=="European Country")
+Con_Nigeria<-subset(Con_popentrpoul_sf,name_ec=="Nigeria")
+Con_US<-subset(Con_popentrpoul_sf,name_ec=="United States") 
 
 ggplot() +
   geom_sf(data = world.map, fill = "lightgrey", color = NA) + 
@@ -1931,7 +2078,9 @@ ggplot() +
   geom_sf(data = Con_US, fill = "#baa1a1", color = NA) + 
   coord_sf(crs = "+proj=longlat +datum=WGS84", xlim = c(-160, 165), ylim = c(-56, 90)) +
   theme_bw() + # 使用简洁主题
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        axis.text = element_text(size=12),
+        panel.grid.major = element_blank() ) # 删除主要的灰色虚线)
 
 
 
@@ -1989,9 +2138,9 @@ ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_India.png", p, bg
 
 
 #####【EU 饼图】------
-piedata_EU <- lineardata_max[lineardata_max$Country == "European Union", ]
+piedata_EU <- lineardata_max[lineardata_max$Country == "European Country", ]
 piedata_EU$Value<-c(1,1,1,1)
-color_EU<-c("pop_All"="#8E581C","pop_CH"="#FAE3D7","poul_CH"="#FAE3D7","poul_All"="#8E581C")
+color_EU<-c("pop_All"="#BF8D44","pop_CH"="#F2B396","poul_CH"="#F2B396","poul_All"="#E3CB8F")  #8E581C
 # 顺序
 desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
 piedata_EU$Order <- factor(paste(piedata_EU$Part, piedata_EU$Type, sep = "_"), levels = desired_order)
@@ -2097,6 +2246,10 @@ Global_birdEntropy_dfna <- Global_birdEntropy_dfna %>%
 # 统计每个国家的Guide类别的像元数量
 country_guide_count <- Global_birdEntropy_dfna %>%
   count(Country, Guide)
+country_guide_count <- country_guide_count %>%
+  group_by(Guide) %>%
+  mutate(percentage = n / sum(n))
+
 
 # 使用弦图可视化
 library(circlize)
@@ -2106,7 +2259,7 @@ chord_data <- country_guide_count %>%
   filter(n > 0) %>%
   select(Guide, Country, n)%>%
   mutate(Country = case_when(
-    Country == "European Union" ~ "EU",
+    Country == "European Country" ~ "EU",
     Country == "United States" ~ "US",
     TRUE ~ Country ))
 
@@ -2174,7 +2327,13 @@ Global_CHEntropy_dfna <- Global_CHEntropy_dfna %>%
 # 统计每个国家的Guide类别的像元数量
 country_guide_count <- Global_CHEntropy_dfna %>%
   count(Country, Guide)
-
+country_guide_count <- country_guide_count %>%
+  group_by(Guide) %>%
+  mutate(percentage = n / sum(n))
+country_guide_count <- country_guide_count %>%
+  group_by(Country) %>%
+  mutate(percentage_c = n / sum(n))
+# 使用弦图可视化
 # 使用弦图可视化
 library(circlize)
 
@@ -2183,7 +2342,7 @@ chord_data <- country_guide_count %>%
   filter(n > 0) %>%
   select(Guide, Country, n)%>%
   mutate(Country = case_when(
-    Country == "European Union" ~ "EU",
+    Country == "European Country" ~ "EC",
     Country == "United States" ~ "US",
     TRUE ~ Country ))
     
@@ -2196,7 +2355,7 @@ chord_data <- country_guide_count %>%
 grid.col = NULL
 grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#377EB8","#E41A1C","#4DAF4A","#984EA3","#f7a156") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
 #grid.col[rownames(chord_data)] = c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#f7a156")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
-grid.col[c("China", "India", "EU", "Nigeria","US")] = c("#D9705A", "#D9705A","#D9705A",  "#D9705A", "#D9705A")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
+grid.col[c("China", "India", "EC", "Nigeria","US")] = c("#D9705A", "#D9705A","#D9705A",  "#D9705A", "#D9705A")  #c("#FF6699","#33CCFF","#99FFC9","#E600E6","#FFD700")
 
 
 #第一种
@@ -2404,7 +2563,7 @@ library(circlize)
 # rownames(mat_Allpop2) <- mat_Allpop$Variable
 # mat_Allpop2 <- mat_Allpop2[c("Seabirds", "Shorebirds", "Waterfowls", "Wading bird", "unclassified"),]
 # rownames(mat_Allpop2)<-c("Seabirds", "Shorebirds", "Waterfowls", "Large Wading birds","unclassified")
-# colnames(mat_Allpop2)<-c("China", "India", "EU", "Nigeria","US")
+# colnames(mat_Allpop2)<-c("China", "India", "EC", "Nigeria","US")
 # chordDiagram(mat_Allpop2)
 
 #国家在下面
@@ -2413,7 +2572,7 @@ mat_Allpop2 <- as.matrix(mat_Allpop[, -1])
 rownames(mat_Allpop2) <- mat_Allpop$Country
 #mat_Allpop2 <- mat_Allpop2[c("Seabirds", "Shorebirds", "Waterfowls", "Wading bird", "unclassified"),]
 这里错了colnames(mat_Allpop2)<-c("Seabirds", "Shorebirds", "Waterfowls", "Large Wading birds","Others")
-rownames(mat_Allpop2)<-c("China", "India", "EU", "Nigeria","US")
+rownames(mat_Allpop2)<-c("China", "India", "EC", "Nigeria","US")
 chordDiagram(mat_Allpop2)
 
 #设定颜色
@@ -2446,7 +2605,7 @@ mat_Allpoul2 <- as.matrix(mat_Allpoul[, -1])
 rownames(mat_Allpoul2) <- mat_Allpoul$Country
 #mat_Allpoul2 <- mat_Allpoul2[c("Seabirds", "Shorebirds", "Waterfowls", "Wading bird", "unclassified"),]
 colnames(mat_Allpoul2)<-c("Seabirds", "Shorebirds", "Waterfowls", "Large Wading birds","Others")
-rownames(mat_Allpoul2)<-c("China", "India", "EU", "Nigeria","US")
+rownames(mat_Allpoul2)<-c("China", "India", "EC", "Nigeria","US")
 chordDiagram(mat_Allpoul2)
 
 #设定颜色
@@ -2479,7 +2638,7 @@ mat_CHpop2 <- as.matrix(mat_CHpop[, -1])
 rownames(mat_CHpop2) <- mat_CHpop$Country
 #mat_CHpop2 <- mat_CHpop2[c("Seabirds", "Shorebirds", "Waterfowls", "Wading bird", "unclassified"),]
 colnames(mat_CHpop2)<-c("Seabirds", "Shorebirds", "Waterfowls", "Large Wading birds","Others")
-rownames(mat_CHpop2)<-c("China", "India", "EU", "Nigeria","US")
+rownames(mat_CHpop2)<-c("China", "India", "EC", "Nigeria","US")
 chordDiagram(mat_CHpop2)
 
 #设定颜色
@@ -2511,7 +2670,7 @@ mat_CHpoul2 <- as.matrix(mat_CHpoul[, -1])
 rownames(mat_CHpoul2) <- mat_CHpoul$Country
 #mat_CHpoul2 <- mat_CHpoul2[c("Seabirds", "Shorebirds", "Waterfowls", "Wading bird", "unclassified"),]
 colnames(mat_CHpoul2)<-c("Seabirds", "Shorebirds", "Waterfowls", "Large Wading birds","Others")
-rownames(mat_CHpoul2)<-c("China", "India", "EU", "Nigeria","US")
+rownames(mat_CHpoul2)<-c("China", "India", "EC", "Nigeria","US")
 chordDiagram(mat_CHpoul2)
 
 #设定颜色
