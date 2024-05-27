@@ -9,7 +9,7 @@ crs <- '+proj=longlat +datum=WGS84'
 
 ##########AE calculation###############
 allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
-speciesPixelNumPath <- list.files('/root/autodl-tmp/result/singleModel',pattern = '.tif',full.names = T)
+speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_model',pattern = '.tif',full.names = T)
 spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
 speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
@@ -17,7 +17,7 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 #######1.Cumulative species months#########
 speciesPixelNum2 <- rast(speciesPixelNumPath2)
 allMonth <- sum(speciesPixelNum2,na.rm=T)%>% mask(globalCountry)
-#writeRaster(allMonth,paste0(basePath,'AE_data/allMonth.tif'))
+#writeRaster(allMonth,paste0(basePath,'AE_data/allMonth.tif'), overwrite=T)
 
 #######2.AE##########
 allMonth <- rast(paste0(basePath,'AE_data/allMonth.tif'))
@@ -31,7 +31,7 @@ calEntropy <- lapply(speciesPixelNumPath2, function(x){
 calEntropy <- rast(calEntropy)
 AE<-sum(calEntropy,na.rm = T)%>% mask(globalCountry)
 plot(AE)
-#writeRaster(AE,paste0(basePath,'AE_data/AE.tif'))
+#writeRaster(AE,paste0(basePath,'AE_data/AE.tif'), overwrite=T)
 
 
 
