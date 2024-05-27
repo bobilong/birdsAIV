@@ -1,4 +1,7 @@
-
+library(data.table)
+library(ggplot2)
+library(terra)
+library(dplyr)
 basePath<-"/root/autodl-tmp/humPoulResult/data/"
 
 world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
