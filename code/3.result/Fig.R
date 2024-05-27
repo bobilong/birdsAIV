@@ -7,7 +7,7 @@ basePath<-"/root/autodl-tmp/humPoulResult/data/"
 world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
 globalCountry <- vect(world.map) 
 globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
-coast <- ne_coastline(scale = "small", returnclass = "sf")
+coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
 crs <- '+proj=longlat +datum=WGS84'
 allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
 speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_model',pattern = '.tif',full.names = T)
@@ -266,6 +266,8 @@ ggplot(valisEntropy, aes(x = Vborder1, y = sum,fill=Vborder1)) + #,
 library(terra)
 library(data.table)
 library(dplyr)
+library(stringr)
+library(tidyterra)
 # outBreak <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv')
 # outBreak$Longitude <- as.numeric(outBreak$Longitude)
 # addGeom <- cellFromXY(globalRaster,outBreak[,c('Longitude','Latitude')]) %>% 
@@ -492,11 +494,11 @@ my_formula <- y ~ x
 
 #GDP
 ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
-  geom_point(aes(size=POP_EST_label), alpha=0.5) +
-  geom_text(data=result_dfc, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  geom_point(aes(size=POP_EST_label), alpha=0.5,show.legend = F) +
+  # geom_text(data=result_dfc, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
-  geom_smooth(aes(log(GDP_MD),accuracy),fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
+  geom_smooth(aes(log(GDP_MD),accuracy),,show.legend = F,fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
   xlab('GDP (Log)') +
   ylab('Accuracy') +
   ylim(c(0,1))+
@@ -553,10 +555,11 @@ my_trans <- trans_new(
   inverse = function(x) (x - 1) / 1.1 + 1
 )
 
-result_df5<-result_df4[result_df4$country!="Cyprus",]
-ggplot(result_df5, aes(per, accuracy, color=CONTINENT)) +
+# result_df5<-result_df4[result_df4$country!="Cyprus",]
+ggplot(result_df4, aes(per, accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_label), alpha=0.5) +
-  geom_text(data=result_df5, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  ylim(c(0,1))+
+  # geom_text(data=result_df5, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
   geom_smooth(aes(per,accuracy),fill="lightgrey",color = "grey",method = "loess", formula = y ~ I(x^-1))+
