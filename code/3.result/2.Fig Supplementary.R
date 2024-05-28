@@ -569,7 +569,7 @@ FI <- 2*((recall*precise)/(recall+precise))  ;FI
 
 #a : 人口和活动熵栅格二元--------
 popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif")
-Entropy<-rast("/root/autodl-tmp/zyresult/Entropy/Global_birds_Entropy.tif") ; plot(Entropy)
+Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
 world.map <- ne_countries(returnclass = "sf") |>filter(continent != "Antarctica")
 globalCountry <- vect(world.map) 
 
@@ -730,7 +730,7 @@ print(legend)
 # writeRaster(poul_raster,"/root/autodl-tmp/zyresult/Poultry_duckchic.tif",overwrite=T)
 
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")
-Entropy<-rast("/root/autodl-tmp/zyresult/Entropy/Global_birds_Entropy.tif")
+Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
 hist(Entropy)
 world.map <- ne_countries(returnclass = "sf") |>filter(continent != "Antarctica")
 globalCountry <- vect(world.map) 
