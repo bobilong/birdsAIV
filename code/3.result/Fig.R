@@ -426,7 +426,7 @@ globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
 countryData <- as.data.frame(globalSHP) %>% .[,c('NAME_LONG','POP_EST','POP_RANK','ECONOMY','INCOME_GRP','CONTINENT','GDP_MD')]
 result_df3 <- left_join(result_country,countryData,by=c('country'='NAME_LONG'))
 result_df4 <- left_join(result_df3,healthData,by=c('country'='Country Name')) %>% na.omit()
-result_df4$health <- rowMeans(result_df4[,22:42])
+result_df4$health <- rowMeans(result_df4[,21:41])
 result_df4$per <- (result_df4$df/result_df4$alldf)
 
 # result_df3$tt <- result_df3$TP+result_df3$FN
@@ -495,7 +495,7 @@ my_formula <- y ~ x
 #GDP
 p2<-ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_label), alpha=0.5,show.legend = F) +
-  geom_text(data=result_df4, aes(label=country, x=log(GDP_MD), y=accuracy),show.legend = F,size=4.5, hjust=0.5, vjust=2) +
+  geom_text(data=result_dfc, aes(label=country, x=log(GDP_MD), y=accuracy),show.legend = F,size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
   geom_smooth(aes(log(GDP_MD),accuracy),show.legend = F,fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
@@ -509,6 +509,8 @@ p2<-ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
   scale_size_manual(values = size_values) +
   guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
          color=guide_legend(title="Continent"))
+
+p2
 
 
 #per!!
@@ -555,11 +557,11 @@ my_trans <- trans_new(
   inverse = function(x) (x - 1) / 1.1 + 1
 )
 
-# result_df5<-result_df4[result_df4$country!="Cyprus",]
-p1<-ggplot(result_df4, aes(per, accuracy, color=CONTINENT)) +
+result_df5<-result_df4[result_df4$country!="Cyprus",]
+p1<-ggplot(result_df5, aes(per, accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_label), alpha=0.5) +
   ylim(c(0,1))+
-  geom_text(data=result_df4, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  geom_text(data=result_dfc, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
   geom_smooth(aes(per,accuracy),fill="lightgrey",color = "grey",method = "loess", formula = y ~ I(x^-1))+
@@ -682,6 +684,52 @@ EnvironmentalName <- c() # 没有环境名称
 
 
 
+
+
+
+
+#五个国家多少病例数？#######
+`%notin%` <- Negate(`%in%`)
+library(lubridate)
+outBreak1 <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv') %>% subset(Diagnosis.status=='Confirmed'&Animal.type%in%c('Domestic','Wild'))
+
+outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
+outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
+outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))   #这一句是用来运行全部的
+#outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')  #这一句是用来仅运行H5N1-HPAI的
+
+outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
+
+addGeom <- cellFromXY(globalRaster,outBreak1[,c('Longitude','Latitude')]) %>% 
+  cbind(id=.,outBreak1)
+thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
+outBreak2 <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
+
+plot(outBreak2)
+
+
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Contry5c <-c('China','India','European Country','Nigeria','United States')
+country <- subset(globalSHP2, globalSHP2$name_ec %in% Contry5c ) 
+
+# 
+# points_in_country <- extract(country, outBreak2)
+# num_points_in_country <- sum(!is.na(points_in_country[,1])) ; num_points_in_country
+# total_points <- nrow(outBreak2) ; total_points
+# 
+# proportion <- num_points_in_country / total_points  ; proportion
+
+# 转换为sf对象
+outBreak2 <- as(sf::st_as_sf(outBreak2), "sf")
+country <- as(sf::st_as_sf(country), "sf")
+
+outBreak2 <- st_transform(outBreak2, st_crs(country))
+points_in_country <- st_intersects(outBreak2, country, sparse = FALSE)
+
+num_points_in_country <- sum(points_in_country) ; num_points_in_country
+total_points <- nrow(outBreak2) ; total_points
+proportion <- num_points_in_country / total_points ; proportion
 
 
 
