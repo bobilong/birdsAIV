@@ -434,8 +434,84 @@ ggplot(data = valisCV, aes(x = gpp, y = sp, color=Hemisphere)) +
     axis.title = element_text(size = 12)
   )
 
-
 #——————————————————————————————————————————————————————————-----------------
+#Fig S4 分类accuracy#########
+
+#1.分毒株
+result_st2 <- fread('/root/autodl-tmp/humPoulResult/data/result_different_Serotype.csv')
+ggplot(data = result_st2, aes(x = label, y = accuracy, fill = label)) +
+  geom_col(position = 'dodge2') +
+  theme_bw() +  # 使用黑白主题作为基础
+  labs( y = "Accuracy") +  
+  scale_fill_brewer(palette = "Pastel1") +
+  ylim(c(0, 0.8))+
+  theme(
+    axis.title.x = element_blank(),
+    text = element_text(size=18),
+    plot.title = element_text(hjust = 0.5),  #
+    legend.position = "none"  
+  )
+
+result_st3 <- mutate(result_st2, df_label = cut(df, breaks = c(0, 1000, 4000, 5000, 10000),
+                                                     labels = c("500 - 1000", "1000 - 4000", "4000 - 5000", "> 5000")))
+size_values <- c("500 - 1000" = 8, "4000 - 5000" = 12, "> 5000" =18)
+
+# 假设result_st2是您的数据框，其中包含病例数量的列名为cases
+p1<-ggplot(data = result_st3, aes(x = label, y = accuracy)) +
+  geom_point(aes(size = df_label) , color="red",alpha=0.5) +  # 使用cases列来决定气泡大小
+  #scale_size_continuous(range = c(5, 10)) +  # 控制气泡大小的范围
+  geom_hline(aes(yintercept =0.732),color='red',linetype = "dashed",alpha=0.5)+
+  scale_size_manual(values = size_values) +
+  scale_color_brewer(palette = "Pastel1") +
+  ylim(c(0.7,0.76))+
+  labs(size = "Number of Cases",y="Accuracy") +  # 添加气泡大小的图例标题
+  theme_bw() +
+  theme(
+    axis.text = element_text( size=12),   #angle = 45,,hjust=1
+    axis.title.y = element_text(size=16),
+    axis.title.x = element_blank()
+  )
+
+
+#2.分感染对象
+`%notin%` <- Negate(`%in%`)
+result_type2 <- fread('/root/autodl-tmp/humPoulResult/data/result_different_type.csv')
+result_type2$df[6]<-3986+2516+140+76+561
+
+result_type2[type == "Captive", type := "Wild"]
+
+# 计算合并后的新值
+result_type2 <- result_type2[, .(df = sum(df),
+                                 TP = sum(TP),
+                                 FN = sum(FN),
+                                 FP = sum(FP),
+                                 TN = sum(TN),
+                                 accuracy = mean(accuracy)), by = .(type)]
+
+
+result_type2 <- mutate(result_type2, df_label = cut(df, breaks = c(0, 100, 500, 1000, 2000, 3000, 7000,8000),
+                                                labels = c("<100", "100 - 500","500 - 1000","1000 - 2000", "2000 - 3000", "3000 - 4000","> 7000")))
+size_values <- c("< 100" = 4, "100 - 500" = 8, "500 - 1000" = 12, "2000 - 3000"=16, "3000 - 4000" =20, "> 7000" =24)
+# result_type2 <- result_type2 %>% 
+#   rename(Total = overall)
+
+p2<-ggplot(data=subset(result_type2,result_type2$type%notin%c('Captive_mammal','')))+
+  geom_point(aes(x = type, y = accuracy,size = df_label) , color="darkblue",alpha=0.5) + 
+  #geom_col(aes(type,accuracy,fill=type),position = 'dodge2')+
+  geom_hline(aes(yintercept =0.732),color='blue',linetype = "dashed",alpha=0.5)+
+  scale_size_manual(values = size_values) +
+  ylim(c(0.7,0.76))+
+  labs(size = "Number of Cases",y="Accuracy",x=NULL) + 
+  theme_bw()+
+  #geom_text(aes(type,accuracy,label=df),size=4,vjust=-0.5)+
+  theme(
+    axis.text = element_text(size=12),   #angle = 45,,hjust=1
+    axis.title.y = element_text(size=16)
+  )
+
+
+p1+p2
+
 #Fig S4 H5N1#########
 #a##########
 library(terra)
@@ -454,7 +530,7 @@ outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
 outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
 outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))   #这一句是用来运行全部的
 
-outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')  #这一句是用来仅运行H5N1-HPAI的
+outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI'|outBreak1$label=='LPAI')  #这一句是用来仅运行H5N1-HPAI的
 
 outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
 
@@ -464,15 +540,18 @@ thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
 outBreak2 <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
 
 
-plotEntropy <- ifel(overEntropy>=4.107,1,0)
+plotEntropy <- ifel(overEntropy>=4.19,1,0)
 #加载海岸线数据
 coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
 crs <- '+proj=longlat +datum=WGS84'
+
 ggplot() +
   geom_spatraster(data = plotEntropy) +
   geom_spatvector(data=coast,fill=NA)+
   #coord_sf(crs = crs,xlim=c(-160,180),ylim=c(-56,90))+
-  geom_spatvector(data=outBreak2,size=2, shape = 4,color='#ff4f4c',fill='#f26c6a', alpha = 0.8,stroke = 0.3)+   #shape = 21是圆圈，shape = 4是×
+  #geom_spatvector(data=outBreak2,size=2, shape = 4,color='#ff4f4c',fill='#f26c6a', alpha = 0.8,stroke = 0.3)+   #shape = 21是圆圈，shape = 4是×
+  geom_spatvector(data = outBreak2, aes(color = label), size = 3, shape = 4, alpha = 0.8, stroke = 0.3) +
+  scale_color_manual(values = c("HPAI" = "#370d51", "LPAI" = "#e040fb")) +
   theme_bw()+
   #scale_color_manual(values='#fc4e4e', labels='Outbreak of\navian influenza') +
   scale_fill_gradient(low = "lightgrey",high = "yellow" ,space = "Lab",n.break=2,
@@ -508,7 +587,7 @@ outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
 # r <- outBreak[outBreak$Longitude>60&outBreak$Longitude<120&outBreak$Latitude>35&outBreak$Latitude<60,]
 #outBreak1 <- subset(outBreak1,outBreak1$h_label%in%c('H9N2','H5N6'))
 outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))
-#outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')
+outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI'|outBreak1$label=='LPAI')  #这一句是用来仅运行H5N1-HPAI的
 
 
 outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
