@@ -498,7 +498,7 @@ ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
   # geom_text(data=result_dfc, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
-  geom_smooth(aes(log(GDP_MD),accuracy),,show.legend = F,fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
+  geom_smooth(aes(log(GDP_MD),accuracy),show.legend = F,fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
   xlab('GDP (Log)') +
   ylab('Accuracy') +
   ylim(c(0,1))+
@@ -928,9 +928,11 @@ popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resam
 #Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
 
+#像元数
 hotAND <- ifel(hotentrpoppoul==13,1,0)  ; plot(hotAND); global(hotAND,sum,na.rm=T)
 hotAND_pop <- ifel(hotentrpoppoul==11,1,0) ; plot(hotAND_pop); global(hotAND_pop,sum,na.rm=T)
 hotAND_poul <- ifel(hotentrpoppoul==12,1,0)  ; plot(hotAND_poul); global(hotAND_poul,sum,na.rm=T)
+Nonehot<- ifel(hotentrpoppoul==0,1,0)  ; plot(Nonehot); global(Nonehot,sum,na.rm=T)
 
 Numpop_hotAND<-hotAND*popd2015; plot(Numpop_hotAND); global(Numpop_hotAND,sum,na.rm=T)
 Numpoul_hotAND<-hotAND*poul2015; plot(Numpoul_hotAND); global(Numpoul_hotAND,sum,na.rm=T)
@@ -940,6 +942,19 @@ Numpoul_hotAND_pop<-hotAND_pop*poul2015; plot(Numpoul_hotAND_pop); global(Numpou
 
 Numpop_hotAND_poul<-hotAND_poul*popd2015; plot(Numpop_hotAND_poul); global(Numpop_hotAND_poul,sum,na.rm=T)
 Numpoul_hotAND_poul<-hotAND_poul*poul2015; plot(Numpoul_hotAND_poul); global(Numpoul_hotAND_poul,sum,na.rm=T)
+
+#统计总数
+plot(hotentrpoppoul)
+
+hotentrpoppoul_df<-c(hotentrpoppoul,popd2015,poul2015) %>% terra::as.data.frame() %>%na.omit()
+head(hotentrpoppoul_df)
+names(hotentrpoppoul_df)<-c("type","pop","poul")
+
+Num_result <- hotentrpoppoul_df %>%
+  group_by(type) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+Num_result
+
 
 
 
@@ -1701,19 +1716,6 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
 
 #Fig.5 ############
-basePath<-"/root/autodl-tmp/humPoulResult/data/"
-
-world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
-globalCountry <- vect(world.map) 
-globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
-coast <- ne_coastline(scale = "small", returnclass = "sf")
-crs <- '+proj=longlat +datum=WGS84'
-allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
-speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_model',pattern = '.tif',full.names = T)
-spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
-speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
-
-
 #a ： Functional Group###########
 #2.总功能群活动熵数据
 listFunc<-list.files('/root/autodl-tmp/humPoulResult/data/Mantel_data/birdFuncAE',full.names = T)
@@ -1762,22 +1764,14 @@ summary(Global_CHEntropy_df)
 
 
 
-Global_CHEntropy_df3 <- data.table::melt(data.table(Global_birdEntropy_df),id=6:10,measure=1:5)
-result_chpop <- Global_CHEntropy_df3[value>0,.(slope=summary(lm(`Population(Log)`~value))$coef[2],
-                                               r2=summary(lm(`Population(Log)`~value))$r.squared,
-                                               se=summary(lm(`Population(Log)`~value))$coef[4],
-                                               p=summary(lm(`Population(Log)`~value))$coef[8],
-                                               label='ch'),.(Country,variable)]
-
-
-
-
-
-
-
-
-
-
+# Global_CHEntropy_df3 <- data.table::melt(data.table(Global_birdEntropy_df),id=6:10,measure=1:5)
+# result_chpop <- Global_CHEntropy_df3[value>0,.(slope=summary(lm(`Population(Log)`~value))$coef[2],
+#                                                r2=summary(lm(`Population(Log)`~value))$r.squared,
+#                                                se=summary(lm(`Population(Log)`~value))$coef[4],
+#                                                p=summary(lm(`Population(Log)`~value))$coef[8],
+#                                                label='ch'),.(Country,variable)]
+# 
+# 
 
 ######循环：分别与人口\家禽进行线性拟合------------
 Contry5c <-c('China','India','European Country','Nigeria','United States')
@@ -1974,22 +1968,36 @@ max_r2_rows_CH <- get_max_r2_rows(lineardatalong, "CH")
 lineardata_max <- rbind(max_r2_rows_ALL, max_r2_rows_CH)
 print(lineardata_max)
 
+# # 使用ifelse语句来创建颜色列
+# lineardata_max$Color <- ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "< 0.4", "#F5EAD0",
+#                                ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.4 - 0.5", "#E3CB8F",
+#                                       ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.5 - 0.6", "#BF8D44",
+#                                              ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.6 - 0.7", "#8E581C",
+#                                                     ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "> 0.7", "#59310D",
+#                                                            ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "< 0.4", "#FAE3D7",
+#                                                                   ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.4 - 0.5", "#F2B396",
+#                                                                          ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.5 - 0.6", "#D9705A",
+#                                                                                 ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.6 - 0.7", "#B42D34",
+#                                                                                        ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "> 0.7", "#6E0D20",
+#                                                                                               NA))))))))))
 # 使用ifelse语句来创建颜色列
-lineardata_max$Color <- ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "< 0.4", "#F5EAD0",
-                               ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.4 - 0.5", "#E3CB8F",
-                                      ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.5 - 0.6", "#BF8D44",
-                                             ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.6 - 0.7", "#8E581C",
-                                                    ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "> 0.7", "#59310D",
+lineardata_max$Color <- ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "< 0.4", "#FAE3D7",
+                               ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.4 - 0.5", "#F2B396",
+                                      ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.5 - 0.6", "#D9705A",
+                                             ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.6 - 0.7", "#B42D34",
+                                                    ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "> 0.7", "#6E0D20",
                                                            ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "< 0.4", "#FAE3D7",
                                                                   ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.4 - 0.5", "#F2B396",
                                                                          ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.5 - 0.6", "#D9705A",
                                                                                 ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.6 - 0.7", "#B42D34",
                                                                                        ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "> 0.7", "#6E0D20",
                                                                                               NA))))))))))
+
+
 lineardata_max
 #fwrite(lineardata_max,"/root/autodl-tmp/humPoulResult/data/Mantel_data/lineardata_max.csv")
 ######——制作图例---------
-colors_All <- c("< 0.4"="#F5EAD0", "0.4 - 0.5" = "#E3CB8F", "0.5 - 0.6" = "#BF8D44", "0.6 - 0.7" = "#8E581C", "> 0.7" = "#59310D")
+colors_All <- c("< 0.4"="#FAE3D7", "0.4 - 0.5" = "#F2B396", "0.5 - 0.6" = "#D9705A", "0.6 - 0.7" = "#B42D34", "> 0.7" = "#6E0D20")
 #colors_CH <- c("< 0.3"="#E7F2F1", "0.3 - 0.4" = "#AFDCD5", "0.4 - 0.5" = "#6DB2AD", "0.5 - 0.6" = "#347C78", "> 0.6" = "#174A41")
 colors_CH <- c("< 0.4"="#FAE3D7", "0.4 - 0.5" = "#F2B396", "0.5 - 0.6" = "#D9705A", "0.6 - 0.7" = "#B42D34", "> 0.7" = "#6E0D20")
 
@@ -2012,6 +2020,25 @@ p2<-ggplot() +
 
 p1+p2
 #ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_Lengend.png", p1+p2, bg = "transparent", width = 18, height = 8, units = "in")
+
+
+
+colors_gradient <- c("#FAE3D7", "#F2B396", "#D9705A", "#B42D34", "#6E0D20")
+library(scales)
+# 创建一个连续的图例
+ggplot(data_All, aes(x=Country, y=Max_r, fill=Max_r)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  scale_fill_gradientn(colors=colors_gradient, 
+                       values=rescale(c(0.4, 0.5, 0.6, 0.7, 0.8)),
+                       name="r (All)",
+                       limits=c(0.4, 0.8),
+                       breaks=c(0.4, 0.5, 0.6, 0.7, 0.8),
+                       labels=c("< 0.4", "0.5", "0.6", "0.7", "> 0.8")) +
+  theme(text = element_text(size=10),
+        legend.position = "bottom",
+        legend.background = element_rect(fill="transparent"),
+        legend.title = element_blank())
+
 
 ######——制作底图---------
 #世界地图
@@ -2042,10 +2069,10 @@ ggplot() +
 ######【China饼图】------
 piedata_China <- lineardata_max[lineardata_max$Country == "China", ]
 piedata_China$Value<-c(1,1,1,1)
-color_China<-c("pop_All"="#59310D","pop_CH"="#B42D34","poul_CH"="#B42D34","poul_All"="#59310D")
+color_China<-c("pop_All"="#6E0D20","pop_CH"="#B42D34","poul_CH"="#B42D34","poul_All"="#6E0D20")
 
 # 顺序
-desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
+desired_order <- c("pop_CH", "pop_All", "poul_All", "poul_CH")
 piedata_China$Order <- factor(paste(piedata_China$Part, piedata_China$Type, sep = "_"), levels = desired_order)
 piedata_China <- piedata_China[order(piedata_China$Order), ]
 piedata_China$Color <- factor(piedata_China$Color, levels = unique(piedata_China$Color))
@@ -2071,7 +2098,7 @@ piedata_India <- lineardata_max[lineardata_max$Country == "India", ]
 piedata_India$Value<-c(1,1,1,1)
 
 # 顺序
-desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
+desired_order <- c("pop_CH", "pop_All", "poul_All", "poul_CH")
 piedata_India$Order <- factor(paste(piedata_India$Part, piedata_India$Type, sep = "_"), levels = desired_order)
 piedata_India <- piedata_India[order(piedata_India$Order), ]
 piedata_India$Color <- factor(piedata_India$Color, levels = unique(piedata_India$Color))
@@ -2095,9 +2122,9 @@ ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_India.png", p, bg
 ######【EU 饼图】------
 piedata_EU <- lineardata_max[lineardata_max$Country == "European Country", ]
 piedata_EU$Value<-c(1,1,1,1)
-color_EU<-c("pop_All"="#BF8D44","pop_CH"="#F2B396","poul_CH"="#F2B396","poul_All"="#E3CB8F")  #8E581C
+color_EU<-c("pop_All"="#D9705A","pop_CH"="#F2B396","poul_CH"="#F2B396","poul_All"="#F2B396")  #8E581C
 # 顺序
-desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
+desired_order <- c("pop_CH", "pop_All", "poul_All", "poul_CH")
 piedata_EU$Order <- factor(paste(piedata_EU$Part, piedata_EU$Type, sep = "_"), levels = desired_order)
 piedata_EU <- piedata_EU[order(piedata_EU$Order), ]
 piedata_EU$Color <- factor(piedata_EU$Color, levels = unique(piedata_EU$Color))
@@ -2121,10 +2148,10 @@ ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_EU.png", p, bg = 
 piedata_Nigeria <- lineardata_max[lineardata_max$Country == "Nigeria", ]
 piedata_Nigeria$Value<-c(1,1,1,1)
 
-color_Nigeria<-c("pop_All"="#F5EAD0","pop_CH"="#FAE3D7","poul_CH"="#FAE3D7","poul_All"="#F5EAD0")
+color_Nigeria<-c("pop_All"="#FAE3D7","pop_CH"="#FAE3D7","poul_CH"="#FAE3D7","poul_All"="#FAE3D7")
 
 # 顺序
-desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
+desired_order <- c("pop_CH", "pop_All", "poul_All", "poul_CH")
 piedata_Nigeria$Order <- factor(paste(piedata_Nigeria$Part, piedata_Nigeria$Type, sep = "_"), levels = desired_order)
 piedata_Nigeria <- piedata_Nigeria[order(piedata_Nigeria$Order), ]
 piedata_Nigeria$Color <- factor(piedata_Nigeria$Color, levels = unique(piedata_Nigeria$Color))
@@ -2149,10 +2176,10 @@ ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_Nigeria.png", p, 
 piedata_US <- lineardata_max[lineardata_max$Country == "United States", ]
 piedata_US$Value<-c(1,1,1,1)
 
-color_US<-c("pop_All"="#8E581C","pop_CH"="#D9705A","poul_CH"="#D9705A","poul_All"="#BF8D44")
+color_US<-c("pop_All"="#B42D34","pop_CH"="#D9705A","poul_CH"="#D9705A","poul_All"="#D9705A")
 
 # 顺序
-desired_order <- c("pop_All", "pop_CH", "poul_CH", "poul_All")
+desired_order <- c("pop_CH", "pop_All", "poul_All", "poul_CH")
 piedata_US$Order <- factor(paste(piedata_US$Part, piedata_US$Type, sep = "_"), levels = desired_order)
 piedata_US <- piedata_US[order(piedata_US$Order), ]
 piedata_US$Color <- factor(piedata_US$Color, levels = unique(piedata_US$Color))
