@@ -16,9 +16,9 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
 
 
-#####Fig1.CV of Species Richness & AE###############
+#####Fig1.Species Richness CV & AE###############
 #######a-----------
-#CV of Species Richness calculation
+#Species Richness CV calculation
 
 spMonth <- rast(speciesPixelNumPath2)
 sp_perMonth <- tapp(spMonth,names(spMonth),sum,na.rm=T) %>% mask(.,globalCountry)
@@ -493,9 +493,9 @@ size_values <- c("<1000" = 3, "1000 - 2000" = 4, "2000-5000" = 6, "5000 - 10000"
 my_formula <- y ~ x
 
 #GDP
-ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
+p2<-ggplot(result_df4, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_label), alpha=0.5,show.legend = F) +
-  # geom_text(data=result_dfc, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  geom_text(data=result_df4, aes(label=country, x=log(GDP_MD), y=accuracy),show.legend = F,size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
   geom_smooth(aes(log(GDP_MD),accuracy),show.legend = F,fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
@@ -556,10 +556,10 @@ my_trans <- trans_new(
 )
 
 # result_df5<-result_df4[result_df4$country!="Cyprus",]
-ggplot(result_df4, aes(per, accuracy, color=CONTINENT)) +
+p1<-ggplot(result_df4, aes(per, accuracy, color=CONTINENT)) +
   geom_point(aes(size=POP_EST_label), alpha=0.5) +
   ylim(c(0,1))+
-  # geom_text(data=result_df5, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
+  geom_text(data=result_df4, aes(label=country, x=per, y=accuracy),size=4.5, hjust=0.5, vjust=2) +
   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
   geom_smooth(aes(per,accuracy),fill="lightgrey",color = "grey",method = "loess", formula = y ~ I(x^-1))+
@@ -574,85 +574,7 @@ ggplot(result_df4, aes(per, accuracy, color=CONTINENT)) +
          color=guide_legend(title="Continent"))
 
 
-# ggplot(result_df4, aes((GDP_MD/POP_EST), accuracy, color=CONTINENT)) +
-#   geom_point(aes(size=POP_EST_size), alpha=0.5) +
-#   geom_text(data=result_df4, aes(label=country, x=(GDP_MD/POP_EST), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
-#   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
-#   #geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
-#   geom_smooth(aes((GDP_MD/POP_EST),accuracy),fill="lightgrey",color = "grey",method = "lm", formula = y ~ I(x^-1))+
-#   xlab('GDP per capital (Log)') +
-#   ylab('Accuracy') +
-#   theme_bw() +
-#   theme(panel.background = element_blank(),
-#         text = element_text(size=18)) +
-#   scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
-#   guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
-#          color=guide_legend(title="Continent"))
-
-
-
-
-
-# globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
-# result_df2<-fread("/root/autodl-tmp/result/validationCountry.csv")
-# countryData <- as.data.frame(globalSHP) %>% .[,c('NAME_LONG','POP_EST','POP_RANK','ECONOMY','INCOME_GRP','CONTINENT','GDP_MD')]
-# result_df3 <- left_join(result_df2,countryData,by=c('country'='NAME_LONG'))
-# # result_df3$tt <- result_df3$TP+result_df3$FN
-# # result_df4 <- subset(result_df3,result_df3$tt>10)
-# ggplot()+
-#   geom_point(data=result_df3,aes(log(GDP_MD),accuracy,color=CONTINENT,size=POP_EST,alpha=0.5))+
-#   xlab('GDP (log)')+
-#   ylab('Accuracy')+
-#   theme_bw()+
-#   theme(
-#     panel.background = element_blank()
-#   )
-# # 计算POP_EST的十个分位数
-# pop_quantiles <- quantile(result_df3$POP_EST, probs=seq(0, 1, by=0.1), na.rm = TRUE)
-# 
-# # 将POP_EST映射到1到10的大小
-# result_df3$POP_EST_size <- findInterval(result_df3$POP_EST, vec = pop_quantiles)
-# result_df3$POP_EST <- as.numeric(result_df3$POP_EST)
-# result_df3 <- mutate(result_df3, POP_EST_label = cut(POP_EST, breaks = c(35000, 250000, 4970000, 7800000, 10500000, 14700000, 22800000, 34800000, 49700000, 103500000, 1397800000),
-#                                                labels = c("3.5 - 25", "25 - 497", "497 - 780", "780 - 1050", "1050 - 1470", "1470-2280", "2280 - 3480", "3480 - 4970", "4970 - 10350", "10350 - 139780")))
-# # 创建一个向量，包含每个分位数区间的标签
-# # size_labels <- sapply(2:11, function(x) {
-# #   paste(format(round(pop_quantiles[x-1]/10000)), "-", format(round(pop_quantiles[x]/10000)))
-# # })
-# 
-# # 按大洲和人口排序
-# result_df3 <- result_df3[order(result_df3$CONTINENT, -result_df3$POP_EST), ]
-# 
-# # 选择每个大洲人口排名前三的国家
-# top_countries_by_continent <- result_df3 %>%
-#   group_by(CONTINENT) %>%
-#   slice_max(POP_EST, n = 3) %>%
-#   ungroup() %>%
-#   dplyr::select(country)
-# top_countries_by_continent<-c(top_countries_by_continent)
-# 
-# result_df4 <- result_df3[result_df3$country %in% top_countries_by_continent$country[-11], ]   #[-11]为了去掉Canada
-# # 使用 lm() 函数进行线性拟合
-# linear_model <- lm(accuracy ~ log(GDP_MD), data = result_df3)
-# summary(linear_model)
-# # 绘制图形
-# size_labels <- c("3.5 - 25", "25 - 497", "497 - 780", "780 - 1050", "1050 - 1470", "1470-2280", "2280 - 3480", "3480 - 4970", "4970 - 10350", "10350 - 139780")
-# my_formula <- y ~ x
-# ggplot(result_df3, aes(log(GDP_MD), accuracy, color=CONTINENT)) +
-#   geom_point(aes(size=POP_EST_size), alpha=0.5) +
-#   geom_text(data=result_df4, aes(label=country, x=log(GDP_MD), y=accuracy),size=4.5, hjust=0.5, vjust=2) +
-#   scale_color_manual(values = c("#984EA3", "#E41A1C","#4DAF4A",  "#FF7F00", "#a38900","#377EB8"))+
-#   geom_smooth(method = "gam", se = T, fill="lightgrey",color = "grey", alpha=0.3, linetype = "dashed") +  # 全部点的趋势线，黑色  #loess  gam
-# 
-#   xlab('GDP (Log)') +
-#   ylab('Accuracy') +
-#   theme_bw() +
-#   theme(panel.background = element_blank(),
-#         text = element_text(size=18)) +
-#   scale_size(range = c(1, 10), breaks=1:10, labels=size_labels) +
-#   guides(size=guide_legend(title=expression(paste("Human population (" ~ 10^4 ~")"))),
-#          color=guide_legend(title="Continent"))
-
+p1+p2
 
 #病例类型############
 
@@ -1160,18 +1082,18 @@ Contry5c <-c('China','India','European Country','Nigeria','United States')
 countryRaster <- subset(globalSHP2, globalSHP2$name_ec %in% Contry5c ) %>% rasterize(.,globalRaster,field='name_ec')
 
 Global_corData_df <- c(Global_corData,countryRaster) %>% as.data.frame(xy=T)
-names(Global_corData_df)<-c('Lontitude', 'Latitude' ,'AE','Species Richness', "Cumulative Species-months", 'CV of Species Richness',
+names(Global_corData_df)<-c('Lontitude', 'Latitude' ,'AE','Species Richness', "Cumulative Species-months", 'Species Richness CV',
                             'Precipitation', 'Temperature', 'Frost Days',
-                            'GPP', 'CV of GPP',
+                            'GPP', 'GPP CV',
                             "NDVI", "NDWI","LAI","Npp", 
                             'Light Density', 'Road Density', 
                             'Population(Log)', 'Poultry(Log)',
                             'Country')
 
 Global_corData_df <- Global_corData_df %>%
-  dplyr::select(#'AE','Species Richness', "Cumulative Species-months", 'CV of Species Richness',
+  dplyr::select(#'AE','Species Richness', "Cumulative Species-months", 'Species Richness CV',
          'Lontitude', 'Latitude' ,'Precipitation', 'Temperature', 'Frost Days',
-         'GPP', 'CV of GPP',"Npp", "NDVI", "NDWI","LAI",
+         'GPP', 'GPP CV',"Npp", "NDVI", "NDWI","LAI",
          'Light Density', 'Road Density', 'Population(Log)', 'Poultry(Log)',
          'Country')
 summary(Global_corData_df)
@@ -1236,21 +1158,31 @@ fwrite(All5mantel_result,'/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel
 library(vegan)
 library(linkET)
 
-China_corData_df_clean<-fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5corData_result.csv')%>%
+China_corData_df_clean<-fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5corData_result0526.csv')%>%
   subset(.,.$Country=='China') %>% dplyr::select(-ncol(.))
-China_mantel <- fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5mantel_result.csv')%>%
+China_mantel <- fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5mantel_result0526.csv')%>%
   subset(.,.$Country=='China') %>% dplyr::select(-ncol(.))
 
 head(China_mantel)
 China_mantel2<-subset(China_mantel, r>0.4)
 
 
-# China_corData_df_clean2<-China_corData_df_clean[,c('AE','Species Richness', "Cumulative species-months", 'CV of Species Richness',
+# China_corData_df_clean2<-China_corData_df_clean[,c('AE','Species Richness', "Cumulative Species-months", 'Species Richness CV',
 #                                                    'Lontitude', 'Latitude' , 'Precipitation', 'Temperature', 'Frost Days',
-#                                                    'GPP', 'CV of GPP', 'NPP', 
+#                                                    'GPP', 'GPP CV', 'NPP', 
 #                                                    'NDVI', 'NDWI', 'LAI', 
 #                                                    'Light Density', 'Road Density', 
 #                                                    'Human density(Log)', 'Poultry density(Log)')]
+mdata <- correlate(China_corData_df_clean)
+mdata_df <- as.data.frame(mdata$r)
+#fwrite(mdata_df,'/root/autodl-tmp/zyresult/Mantel_Data/China_Correlate.csv')
+
+qcorrplot(mdata,
+          type = "lower", # 热图展示下半部分
+          diag = F,
+)+
+  geom_square()+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, "RdBu"))
 
 China_mantel2 <- China_mantel2 %>%
   mutate(spec = case_when(
@@ -1264,7 +1196,7 @@ China_mantel2 <- China_mantel2 %>%
   ))
 
 
-qcorrplot(China_corData_df_clean, type = "lower", diag = FALSE) +  #China_corData_df_clean
+qcorrplot(China_corData_df_clean, type = "lower", diag = FALSE, is_corr = TRUE) +  #China_corData_df_clean
   geom_square() +   ## 相关性热图的形状
   ## 
   geom_couple(aes(colour = rd, linetype = pd), size=1,
@@ -1301,6 +1233,75 @@ qcorrplot(China_corData_df_clean, type = "lower", diag = FALSE) +  #China_corDat
 
 
 #a#############
+
+All5corData_result<- fread('/root/autodl-tmp/humPoulResult/data/Mantel_data/Mantel_result/All5corData_result0526.csv')
+
+
+# 加载必要的库
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(corrr)
+
+# # 将数据按照Country分组并嵌套，然后计算每个分组的相关性矩阵
+# correlation_results <- All5corData_result %>%
+#   group_by(Country) %>%
+#   nest() %>%
+#   mutate(correlation = map(data, ~correlate(select_if(.x, is.numeric)))) %>%
+#   select(Country, correlation) %>%
+#   unnest(correlation)
+
+# 将数据按照Country分组并嵌套，然后计算每个分组的相关性矩阵
+correlation_results <- All5corData_result %>%
+  group_by(Country) %>%
+  nest() %>%
+  mutate(correlation = map(data, ~ {
+    # 排除标准差为零的变量
+    numeric_data <- select_if(.x, is.numeric)
+    numeric_data <- numeric_data[, sapply(numeric_data, function(x) sd(x) != 0)]
+    # 计算相关性矩阵
+    correlate(numeric_data)
+  })) %>%
+  select(Country, correlation) %>%
+  unnest(correlation)
+
+
+# 首先将相关性矩阵转换为长格式
+long_correlation_results <- correlation_results %>%
+  select(-term) %>%  # 排除term列
+  mutate(id = row_number()) %>%
+  pivot_longer(cols = -c(Country, id), names_to = "variable", values_to = "correlation") %>%
+  filter(variable %in% c("Lontitude", "Latitude", "Precipitation", "Temperature", "Frost Days", 
+                         "GPP", "CV of GPP", "Npp", "NDVI", "NDWI", "LAI",
+                         "Light Density", "Road Density", "Population(Log)", "Poultry(Log)"))
+long_correlation_results <- correlation_results %>%
+  select(-term) %>%  # 排除term列
+  pivot_longer(cols = -Country, names_to = "variable", values_to = "correlation")
+# 分组绘制柱形图
+# 第一组：Longitude, Latitude, Precipitation, Temperature, Frost Days
+ggplot(long_correlation_results %>% filter(variable %in% c("Lontitude", "Latitude", "Precipitation", "Temperature", "Frost Days")), 
+       aes(x = variable, y = correlation, fill = Country)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Country) +
+  labs(title = "Group 1: Environmental Factors", x = "Variable", y = "Correlation") +
+  theme_minimal()
+
+# 第二组：GPP, GPPCV, NPP, NDVI, NDWI, LAI
+ggplot(long_correlation_results %>% filter(variable %in% c("GPP", "GPPCV", "NPP", "NDVI", "NDWI", "LAI")), 
+       aes(x = variable, y = correlation, fill = Country)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Country) +
+  labs(title = "Group 2: Vegetation Indices and Productivity", x = "Variable", y = "Correlation") +
+  theme_minimal()
+
+# 第三组：Light Density, Road Density, Population, Poultry
+ggplot(long_correlation_results %>% filter(variable %in% c("Light Density", "Road Density", "Population", "Poultry")), 
+       aes(x = variable, y = correlation, fill = Country)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Country) +
+  labs(title = "Group 3: Human Activity and Livestock", x = "Variable", y = "Correlation") +
+  theme_minimal()
+
 
 #####地理与气候因子的数据
 climatedata <- data.frame(
@@ -1365,12 +1366,12 @@ vegetationdata_long2 <- vegetationdata_long %>%
 
 vegetationdata_long2 <- vegetationdata_long2 %>%
   mutate(Attribute = case_when(
-    Attribute == "CV_of_GPP" ~ "CV of GPP",
+    Attribute == "CV_of_GPP" ~ "GPP CV",
     TRUE ~ Attribute  # 默认情况下保持原值
   ))
 
 
-vegetationdata_long2$Attribute<-factor(vegetationdata_long2$Attribute,levels = c("GPP","CV of GPP","NPP","NDVI","NDWI","LAI"))
+vegetationdata_long2$Attribute<-factor(vegetationdata_long2$Attribute,levels = c("GPP","GPP CV","NPP","NDVI","NDWI","LAI"))
 
 
 
