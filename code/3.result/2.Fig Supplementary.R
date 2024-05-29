@@ -476,39 +476,40 @@ p1<-ggplot(data = result_st3, aes(x = label, y = accuracy)) +
 #2.分感染对象
 `%notin%` <- Negate(`%in%`)
 result_type2 <- fread('/root/autodl-tmp/humPoulResult/data/result_different_type.csv')
-result_type2$df[6]<-3986+2516+140+76+561
+result_type2$df[7]<-sum(result_type2$df)
 
-result_type2[type == "Captive", type := "Wild"]
+#result_type2[type == "Captive", type := "Wild"]
 
 # 计算合并后的新值
-result_type2 <- result_type2[, .(df = sum(df),
-                                 TP = sum(TP),
-                                 FN = sum(FN),
-                                 FP = sum(FP),
-                                 TN = sum(TN),
-                                 accuracy = mean(accuracy)), by = .(type)]
+# result_type2 <- result_type2[, .(df = sum(df),
+#                                  TP = sum(TP),
+#                                  FN = sum(FN),
+#                                  FP = sum(FP),
+#                                  TN = sum(TN),
+#                                  accuracy = mean(accuracy)), by = .(type)]
 
 
 result_type2 <- mutate(result_type2, df_label = cut(df, breaks = c(0, 100, 500, 1000, 2000, 3000, 7000,8000),
-                                                labels = c("<100", "100 - 500","500 - 1000","1000 - 2000", "2000 - 3000", "3000 - 4000","> 7000")))
-size_values <- c("< 100" = 4, "100 - 500" = 8, "500 - 1000" = 12, "2000 - 3000"=16, "3000 - 4000" =20, "> 7000" =24)
+                                                labels = c("< 100", "100 - 500","500 - 1000","1000 - 2000", "2000 - 3000", "3000 - 4000","> 7000")))
+size_values <- c("< 100" = 4, "100 - 500" = 8, "500 - 1000" = 12,"1000 - 2000" =16, "2000 - 3000"=18, "3000 - 4000" =20, "> 7000" =24)
 # result_type2 <- result_type2 %>% 
 #   rename(Total = overall)
 
-p2<-ggplot(data=subset(result_type2,result_type2$type%notin%c('Captive_mammal','')))+
+result_type2$type<-factor(result_type2$type,levels = c("Overall","Wild bird","Poultry","Wild mammal","Domestic mammal","Human affected","Environmental sample"))
+p2<-ggplot(data=result_type2)+   #subset(result_type2,result_type2$type%notin%c('Captive_mammal',''))
   geom_point(aes(x = type, y = accuracy,size = df_label) , color="darkblue",alpha=0.5) + 
   #geom_col(aes(type,accuracy,fill=type),position = 'dodge2')+
   geom_hline(aes(yintercept =0.732),color='blue',linetype = "dashed",alpha=0.5)+
   scale_size_manual(values = size_values) +
-  ylim(c(0.7,0.76))+
+  ylim(c(0.64,0.76))+
   labs(size = "Number of Cases",y="Accuracy",x=NULL) + 
   theme_bw()+
   #geom_text(aes(type,accuracy,label=df),size=4,vjust=-0.5)+
   theme(
-    axis.text = element_text(size=12),   #angle = 45,,hjust=1
+    axis.text = element_text(angle = 45,hjust=1,size=12),   #angle = 45,,hjust=1
     axis.title.y = element_text(size=16)
   )
-
+p2
 
 p1+p2
 
