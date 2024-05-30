@@ -439,44 +439,49 @@ ggplot(data = valisCV, aes(x = gpp, y = sp, color=Hemisphere)) +
 
 #1.分毒株
 result_st2 <- fread('/root/autodl-tmp/humPoulResult/data/result_different_Serotype.csv')
-ggplot(data = result_st2, aes(x = label, y = accuracy, fill = label)) +
+ggplot(data = result_st2, aes(x = label, y = recall, fill = label)) +
   geom_col(position = 'dodge2') +
   theme_bw() +  # 使用黑白主题作为基础
   labs( y = "Accuracy") +  
   scale_fill_brewer(palette = "Pastel1") +
-  ylim(c(0, 0.8))+
+  ylim(c(0, 0.9))+
   theme(
     axis.title.x = element_blank(),
     text = element_text(size=18),
     plot.title = element_text(hjust = 0.5),  #
     legend.position = "none"  
   )
+result_st3 <- mutate(result_st2, df_label = cut(cases, breaks = c(1500, 2000, 10000, 40000, 50000),
+                                                     labels = c("1500 - 2000", "5000 - 6000", "35000 - 40000", "> 50000")))
+size_values <- c("1500 - 2000" = 4, "5000 - 6000" = 8, "35000 - 40000" = 14, "> 50000" =20)
+result_st3$Group<-c("Pathogenicity","Pathogenicity","Subtype","Subtype")
+#result_st3 <- result_st3 %>%  mutate(recall = percent(recall))
 
-result_st3 <- mutate(result_st2, df_label = cut(df, breaks = c(0, 1000, 4000, 5000, 10000),
-                                                     labels = c("500 - 1000", "1000 - 4000", "4000 - 5000", "> 5000")))
-size_values <- c("500 - 1000" = 8, "4000 - 5000" = 12, "> 5000" =18)
 
 # 假设result_st2是您的数据框，其中包含病例数量的列名为cases
-p1<-ggplot(data = result_st3, aes(x = label, y = accuracy)) +
-  geom_point(aes(size = df_label) , color="red",alpha=0.5) +  # 使用cases列来决定气泡大小
-  #scale_size_continuous(range = c(5, 10)) +  # 控制气泡大小的范围
-  geom_hline(aes(yintercept =0.732),color='red',linetype = "dashed",alpha=0.5)+
-  scale_size_manual(values = size_values) +
-  scale_color_brewer(palette = "Pastel1") +
-  ylim(c(0.7,0.76))+
-  labs(size = "Number of Cases",y="Accuracy") +  # 添加气泡大小的图例标题
+result_st3$Group<-factor(result_st3$Group,levels = c("Subtype","Pathogenicity"))
+result_st3$label<-factor(result_st3$label,levels = c("HPAI","LPAI","H5N1","H9N2"))
+
+p1 <- ggplot(data = result_st3, aes(x = label, y = recall)) +
+  geom_point(aes(size = df_label, color = Group), alpha = 0.5) +  # 使用df_label列来决定气泡大小
+  geom_hline(aes(yintercept = 0.732), color = "grey", linetype = "dashed", alpha = 1) +
+  scale_size_manual(values = size_values) +  # 手动设置气泡大小的值
+  scale_color_manual(values = c("orange", "red")) +  # 手动设置颜色的值
+  ylim(c(0.6, 0.85)) +
+  labs(size = "Number of Cases", y = "Recall") +  # 添加气泡大小的图例标题
   theme_bw() +
   theme(
-    axis.text = element_text( size=12),   #angle = 45,,hjust=1
-    axis.title.y = element_text(size=16),
+    axis.text = element_text(size = 12),
+    axis.title.y = element_text(size = 16),
     axis.title.x = element_blank()
   )
 
+p1
 
 #2.分感染对象
 `%notin%` <- Negate(`%in%`)
 result_type2 <- fread('/root/autodl-tmp/humPoulResult/data/result_different_type.csv')
-result_type2$df[7]<-sum(result_type2$df)
+#result_type2$df[7]<-sum(result_type2$df)
 
 #result_type2[type == "Captive", type := "Wild"]
 
@@ -488,25 +493,26 @@ result_type2$df[7]<-sum(result_type2$df)
 #                                  TN = sum(TN),
 #                                  accuracy = mean(accuracy)), by = .(type)]
 
-
-result_type2 <- mutate(result_type2, df_label = cut(df, breaks = c(0, 100, 500, 1000, 2000, 3000, 7000,8000),
-                                                labels = c("< 100", "100 - 500","500 - 1000","1000 - 2000", "2000 - 3000", "3000 - 4000","> 7000")))
-size_values <- c("< 100" = 4, "100 - 500" = 8, "500 - 1000" = 12,"1000 - 2000" =16, "2000 - 3000"=18, "3000 - 4000" =20, "> 7000" =24)
+#result_type2 <- result_type2 %>%  mutate(recall = percent(recall))
+result_type2 <- mutate(result_type2, df_label = cut(cases, breaks = c(0, 100, 500, 3000, 15000, 40000),
+                                                labels = c("< 100", "100 - 500","2000 - 3000","10000 - 15000", "> 35000")))
+size_values <- c("< 100" = 1, "100 - 500" = 3, "2000 - 3000" = 6, "10000 - 15000"=10, "> 35000" =14)
 # result_type2 <- result_type2 %>% 
 #   rename(Total = overall)
 
-result_type2$type<-factor(result_type2$type,levels = c("Overall","Wild bird","Poultry","Wild mammal","Domestic mammal","Human affected","Environmental sample"))
+result_type2$type<-factor(result_type2$type,levels = c("Wild bird","Poultry","Wild mammal","Domestic mammal","Human affected","Environmental sample"))
 p2<-ggplot(data=result_type2)+   #subset(result_type2,result_type2$type%notin%c('Captive_mammal',''))
-  geom_point(aes(x = type, y = accuracy,size = df_label) , color="darkblue",alpha=0.5) + 
+  geom_point(aes(x = type, y = recall,size = df_label) , color="darkblue",alpha=0.5) + 
   #geom_col(aes(type,accuracy,fill=type),position = 'dodge2')+
   geom_hline(aes(yintercept =0.732),color='blue',linetype = "dashed",alpha=0.5)+
   scale_size_manual(values = size_values) +
-  ylim(c(0.64,0.76))+
-  labs(size = "Number of Cases",y="Accuracy",x=NULL) + 
+  ylim(c(0.65,0.9))+
+  labs(size = "Number of Cases",y="Recall",x=NULL) + 
   theme_bw()+
   #geom_text(aes(type,accuracy,label=df),size=4,vjust=-0.5)+
   theme(
-    axis.text = element_text(angle = 45,hjust=1,size=12),   #angle = 45,,hjust=1
+    axis.text.y = element_text(size=12),
+    axis.text.x = element_text(angle = 45,hjust=1,size=12),   #angle = 45,,hjust=1
     axis.title.y = element_text(size=16)
   )
 p2
