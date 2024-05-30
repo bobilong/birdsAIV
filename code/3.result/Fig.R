@@ -693,9 +693,9 @@ EnvironmentalName <- c() # 没有环境名称
 library(lubridate)
 outBreak1 <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv') %>% subset(Diagnosis.status=='Confirmed'&Animal.type%in%c('Domestic','Wild'))
 
-outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
-outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
-outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))   #这一句是用来运行全部的
+#outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
+#outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
+#outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))   #这一句是用来运行全部的
 #outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI')  #这一句是用来仅运行H5N1-HPAI的
 
 outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
