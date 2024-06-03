@@ -15,6 +15,59 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
 
 
+#Fig S2 鸿雁的逐月物种分布#########
+
+bio1<-rast('/root/autodl-tmp/worldClim5/wc2.1_5m_bio_1.tif')%>% mask(.,globalCountry)
+plot(bio1)
+
+waterPer<-rast('/root/autodl-tmp/waterPer/waterPer.tif')%>% mask(.,globalCountry)
+plot(waterPer)
+
+ggplot() +
+  geom_spatraster(data = waterPer,show.legend=NA) +
+  facet_wrap(.~lyr,nrow = 4,ncol = 3)+
+  labs(fill = "Water proportion")+
+  #scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white')+
+  scale_fill_gradient(low = "lightblue", high = "darkblue", na.value = "white")+
+  theme(
+    panel.background = element_rect(fill = "white"),#背景设置
+    strip.background.x = element_rect(fill = "white"), 
+    # legend.position = c(1.2,0.2),#设置图例与主图距离
+  )
+
+
+#allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
+globalCountry <- vect(world.map) 
+
+speciesPixelNumPath <- list.files('/root/autodl-tmp/result/singleModel_water_xgb',pattern = '.tif',full.names = T)
+spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)
+AnserPath <- speciesPixelNumPath[spName=='Anser cygnoides']
+
+AnserNum <- rast(AnserPath) %>% mask(.,globalCountry)
+names(AnserNum)
+length(names(AnserNum))
+plot(AnserNum)
+
+#用原来的分布
+AnserMaxent<-rast('/root/autodl-tmp/result/model0.5/Anser cygnoides/maxent_1/probability_1.0.tif')
+
+plotData <- AnserMaxent[[c('X1','X2','X3','X4','X5','X6','X7','X8','X9','X10','X11')]]
+names(plotData) <- c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov')
+ggplot() +
+  geom_spatraster(data = plotData,show.legend=NA) +
+  facet_wrap(.~lyr,nrow = 4,ncol = 3)+
+  labs(fill = "Species numbers")+
+  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white')+
+  theme(
+    panel.background = element_rect(fill = "white"),#背景设置
+    strip.background.x = element_rect(fill = "white"), 
+    # legend.position = c(1.2,0.2),#设置图例与主图距离
+  )
+
+
+
+
+
 #Fig S2 Seasonal analysis#########
 
 
