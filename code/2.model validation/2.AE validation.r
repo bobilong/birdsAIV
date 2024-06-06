@@ -1,4 +1,9 @@
 
+library(terra)
+library(data.table)
+library(dplyr)
+library(stringr)
+library(tidyterra)
 
 basePath <- '/root/autodl-tmp/humPoulResult/data/'
 

@@ -15,13 +15,21 @@ speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
 
 
+
+#Fig S1 流程图#########
+allDf <- fread(paste0(basePath,'Supplementary Tables.csv'))
+head(allDf)
+list_of_tables <- lapply(allDf, table)
+list_of_tables$Order
+list_of_tables$`Functional Group`
+
+functional_order_table <- table(allDf$`Functional Group`, allDf$Order)
+functional_order_table
+
+
+
+
 #Fig S2 鸿雁的逐月物种分布#########
-
-bio1<-rast('/root/autodl-tmp/worldClim5/wc2.1_5m_bio_1.tif')%>% mask(.,globalCountry)
-plot(bio1)
-
-waterPer<-rast('/root/autodl-tmp/waterPer/waterPer.tif')%>% mask(.,globalCountry)
-plot(waterPer)
 
 ggplot() +
   geom_spatraster(data = waterPer,show.legend=NA) +
@@ -635,70 +643,235 @@ ggplot() +
   )
 
 #b##########
+# `%notin%` <- Negate(`%in%`)
+# library(lubridate)
+# #outBreak <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv')
+# outBreak1 <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv') %>% subset(Diagnosis.status=='Confirmed'&Animal.type%in%c('Domestic','Wild'))
+# # outBreak <- subset(outBreak,outBreak$Diagnosis.status=='Confirmed')
+# # r <- subset(outBreak,outBreak$Species=='Unspecified Bird'&outBreak$Animal.type=='	
+# # Domestic')
+# outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
+# outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
+# # r <- outBreak[outBreak$Longitude>60&outBreak$Longitude<120&outBreak$Latitude>35&outBreak$Latitude<60,]
+# #outBreak1 <- subset(outBreak1,outBreak1$h_label%in%c('H9N2','H5N6'))
+# outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))
+# outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI'|outBreak1$label=='LPAI')  #这一句是用来仅运行H5N1-HPAI的
+# 
+# 
+# outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
+# 
+# # outBreak <- subset(outBreak,outBreak$year%in%2021:2023)
+# addGeom <- cellFromXY(globalRaster,outBreak1[,c('Longitude','Latitude')]) %>% 
+#   cbind(id=.,outBreak1)
+# thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
+# outBreak2 <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
+# # r <- terra::extract(v,outBreak2)
+# 
+# overEntropy <- rast(paste0(basePath,'AE_data/AE.tif'))%>% crop(globalCountry,mask=T)
+# # global(overEntropy,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+# 
+# # overEntropy2 <- ifel(overEntropy>4.152,overEntropy,NA)
+# 
+# 
+# df <- terra::extract(overEntropy,outBreak2,mean,na.rm=T,cells=T)%>% as.data.frame()
+# allDf <- terra::as.data.frame(overEntropy,na.rm=T,cells=T)
+# 
+# library(pROC)
+# 
+# df$label <- 'good'
+# rocDf <- left_join(allDf,df[,c('cell','label')])
+# rocDf$label <- ifelse(is.na(rocDf$label),'poor',rocDf$label)
+# dfroc1<- roc(rocDf$label, rocDf$sum)
+# plot(dfroc1,col="red",#颜色
+#      legacy.axes=T,#y轴格式更改
+#      print.auc=TRUE,#显示AUC面积
+#      expand=c(0,0),
+#      print.thres=TRUE,#添加截点和95%CI
+#      grid=c(0.2,0.2),grid.col=c("lightgrey","lightgrey"),
+#      #cex.text=1.5,
+#      cex.main=1,  # 主标题字体放大1.5倍
+#      cex.sub=1,   # 副标题字体放大1.5倍
+#      cex.axis=1,  # 坐标轴刻度字体放大1.5倍
+#      cex.lab=1)#网格线设置
+# 
+# 
+# 
+# threshold <- 4.107
+# 
+# TP <- sum(df$sum>=threshold,na.rm = T)  ;TP
+# FN <- sum(df$sum<threshold,na.rm = T)   ;FN
+# FP <- sum(allDf$sum>=threshold,na.rm = T)-TP  ;FP
+# TN <- nrow(allDf)-TP-FN-FP  ;TN
+# 
+# accuracy <- (TP+TN)/(TP+TN+FN+FP)  ;accuracy
+# precise <- (TP)/(TP+FP)  ;precise
+# recall <- (TP)/(TP+FN)  ;recall
+# FI <- 2*((recall*precise)/(recall+precise))  ;FI
+
+#H5N1的最新的ROC##############
 `%notin%` <- Negate(`%in%`)
-library(lubridate)
-#outBreak <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv')
-outBreak1 <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv') %>% subset(Diagnosis.status=='Confirmed'&Animal.type%in%c('Domestic','Wild'))
-# outBreak <- subset(outBreak,outBreak$Diagnosis.status=='Confirmed')
-# r <- subset(outBreak,outBreak$Species=='Unspecified Bird'&outBreak$Animal.type=='	
-# Domestic')
-outBreak1$label <- str_extract(outBreak1$Serotype,'HPAI|LPAI')
-outBreak1$h_label <- str_extract(outBreak1$Serotype,'H[0-9]N[0-9]|H[0-9]')
-# r <- outBreak[outBreak$Longitude>60&outBreak$Longitude<120&outBreak$Latitude>35&outBreak$Latitude<60,]
-#outBreak1 <- subset(outBreak1,outBreak1$h_label%in%c('H9N2','H5N6'))
-outBreak1 <- subset(outBreak1,outBreak1$h_label%notin%c('H9N2','H5N6'))
-outBreak1 <- subset(outBreak1,outBreak1$h_label=='H5N1'&outBreak1$label=='HPAI'|outBreak1$label=='LPAI')  #这一句是用来仅运行H5N1-HPAI的
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
+# calculate  threshold
+outBreakData <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv')%>% subset(Diagnosis.status=='Confirmed')
+
+outBreakData$label <- str_extract(outBreakData$Serotype,'HPAI|LPAI')
+outBreakData$h_label <- str_extract(outBreakData$Serotype,'H[0-9]N[0-9]|H[0-9]')
+outBreakData <- subset(outBreakData,outBreakData$h_label =='H5N1')
+#outBreakData <- subset(outBreakData,outBreakData$h_label %in% c('H5N1','H5N2','H5N8','H5','H5N3','H5N6','H5N5','H5N9','H5N4'))
 
 
-outBreak1$Longitude <- as.numeric(outBreak1$Longitude)
-
-# outBreak <- subset(outBreak,outBreak$year%in%2021:2023)
-addGeom <- cellFromXY(globalRaster,outBreak1[,c('Longitude','Latitude')]) %>% 
-  cbind(id=.,outBreak1)
+outBreakData2 <- na.omit(outBreakData[,c('Country','Longitude','Latitude')])
+addGeom <- cellFromXY(globalRaster,outBreakData2[,c('Longitude','Latitude')]) %>% 
+  cbind(id=.,outBreakData2)
 thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
-outBreak2 <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
-# r <- terra::extract(v,outBreak2)
+breakVect <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
+breakRast <- rasterize(breakVect,globalRaster)
 
-overEntropy <- rast(paste0(basePath,'AE_data/AE.tif'))%>% crop(globalCountry,mask=T)
-# global(overEntropy,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+TP_points <- vect(outBreakData2,geom=c('Longitude','Latitude'),crs=crs)
+AE <- rast('/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif')   #
+sample_TP <- terra::extract(AE,TP_points,mean,bind=T) %>% as.data.frame()
+sample_TP$label <- 'good'
 
-# overEntropy2 <- ifel(overEntropy>4.152,overEntropy,NA)
+trueNgRast <- mask(AE,breakRast,inverse=T)
 
+set.seed(1234)
+sample_TN<- terra::spatSample(trueNgRast,dim(sample_TP)[1],method='random',exhaustive=T,na.rm=T)
+sample_TN$label <- 'poor'
+sampleData <- rbind(sample_TN,sample_TP[,c('sum','label')])
+dfroc1<- roc(sampleData$label, sampleData$sum)
+dfroc1$auc
 
-df <- terra::extract(overEntropy,outBreak2,mean,na.rm=T,cells=T)%>% as.data.frame()
-allDf <- terra::as.data.frame(overEntropy,na.rm=T,cells=T)
-
-library(pROC)
-
-df$label <- 'good'
-rocDf <- left_join(allDf,df[,c('cell','label')])
-rocDf$label <- ifelse(is.na(rocDf$label),'poor',rocDf$label)
-dfroc1<- roc(rocDf$label, rocDf$sum)
-plot(dfroc1,col="red",#颜色
-     legacy.axes=T,#y轴格式更改
-     print.auc=TRUE,#显示AUC面积
+#litter
+plot(dfroc1,col="red",
+     legacy.axes=T,
+     print.auc=TRUE,
      expand=c(0,0),
-     print.thres=TRUE,#添加截点和95%CI
+     print.thres=TRUE,
      grid=c(0.2,0.2),grid.col=c("lightgrey","lightgrey"),
-     #cex.text=1.5,
-     cex.main=1,  # 主标题字体放大1.5倍
-     cex.sub=1,   # 副标题字体放大1.5倍
-     cex.axis=1,  # 坐标轴刻度字体放大1.5倍
-     cex.lab=1)#网格线设置
+     cex.main=1.5, 
+     cex.sub=1.5,  
+     cex.axis=1.5, 
+     cex.lab=1.5)
+
+
+threshold <- dfroc1$auc
+
+WAE<- rast(paste0(basePath,'AE_data/AE_Waterfowls.tif'))%>% mask(globalCountry)
+plotWAE <- ifel(WAE>=4.19,1,0)   #2.559
+
+coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
+crs <- '+proj=longlat +datum=WGS84'
+ggplot() +
+  geom_spatraster(data = plotWAE) +
+  geom_spatvector(data=coast,fill=NA)+
+  #coord_sf(crs = crs,xlim=c(-160,180),ylim=c(-56,90))+
+  geom_spatvector(data=breakVect,size=2, shape = 4,color='#ff4f4c',fill='#f26c6a', alpha = 0.8,stroke = 0.3) +   #shape = 21是圆圈，shape = 4是×
+  theme_bw()+
+  #scale_color_manual(values='#fc4e4e', labels='Outbreak of\navian influenza') +
+  scale_fill_gradient(low = "lightgrey",high = "yellow" ,space = "Lab",n.break=2,
+                      labels=c('Low risk','High risk'),na.value='white')+
+  guides(
+    fill=guide_legend()  )+
+  labs(title = NULL)+
+  theme(
+    text = element_text(size = 15),
+    #axis.text = element_text(size = 15),
+    plot.title = element_text(hjust=0.5),
+    # axis.line = element_line(color = 'black'),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 15),
+    legend.position = "none",
+    legend.direction='horizontal',
+    legend.key.width = unit(0.4,'cm'), 
+    legend.key.height = unit(3,'cm')
+  )
 
 
 
-threshold <- 4.107
 
-TP <- sum(df$sum>=threshold,na.rm = T)  ;TP
-FN <- sum(df$sum<threshold,na.rm = T)   ;FN
-FP <- sum(allDf$sum>=threshold,na.rm = T)-TP  ;FP
-TN <- nrow(allDf)-TP-FN-FP  ;TN
+#试试只用水禽WAE预测##############
+`%notin%` <- Negate(`%in%`)
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+globalSHP <- vect('/root/autodl-tmp/worldBorder/ne_10m_admin_0_countries.shp')
+# calculate  threshold
+outBreakData <- fread('/root/autodl-tmp/YANZHENG/point/allData.csv')%>% subset(Diagnosis.status=='Confirmed')
 
-accuracy <- (TP+TN)/(TP+TN+FN+FP)  ;accuracy
-precise <- (TP)/(TP+FP)  ;precise
-recall <- (TP)/(TP+FN)  ;recall
-FI <- 2*((recall*precise)/(recall+precise))  ;FI
+outBreakData$label <- str_extract(outBreakData$Serotype,'HPAI|LPAI')
+outBreakData$h_label <- str_extract(outBreakData$Serotype,'H[0-9]N[0-9]|H[0-9]')
+outBreakData <- subset(outBreakData,outBreakData$h_label =='H5N1')
+#outBreakData <- subset(outBreakData,outBreakData$h_label %in% c('H5N1','H5N2','H5N8','H5','H5N3','H5N6','H5N5','H5N9','H5N4'))
+
+
+outBreakData2 <- na.omit(outBreakData[,c('Country','Longitude','Latitude')])
+addGeom <- cellFromXY(globalRaster,outBreakData2[,c('Longitude','Latitude')]) %>% 
+  cbind(id=.,outBreakData2)
+thinData <- unique(data.table(addGeom),by='id') %>% dplyr::select(.,-id)
+breakVect <- vect(thinData,geom=c('Longitude','Latitude'),crs=crs)
+breakRast <- rasterize(breakVect,globalRaster)
+
+TP_points <- vect(outBreakData2,geom=c('Longitude','Latitude'),crs=crs)
+AE <- rast('/root/autodl-tmp/humPoulResult/data/AE_data/AE_Waterfowls.tif')   #
+sample_TP <- terra::extract(AE,TP_points,mean,bind=T) %>% as.data.frame()
+sample_TP$label <- 'good'
+
+trueNgRast <- mask(AE,breakRast,inverse=T)
+
+set.seed(1234)
+sample_TN<- terra::spatSample(trueNgRast,dim(sample_TP)[1],method='random',exhaustive=T,na.rm=T)
+sample_TN$label <- 'poor'
+sampleData <- rbind(sample_TN,sample_TP[,c('sum','label')])
+dfroc1<- roc(sampleData$label, sampleData$sum)
+dfroc1$auc
+
+#litter
+plot(dfroc1,col="red",
+     legacy.axes=T,
+     print.auc=TRUE,
+     expand=c(0,0),
+     print.thres=TRUE,
+     grid=c(0.2,0.2),grid.col=c("lightgrey","lightgrey"),
+     cex.main=1.5, 
+     cex.sub=1.5,  
+     cex.axis=1.5, 
+     cex.lab=1.5)
+
+
+#a##########
+threshold <- dfroc1$auc
+
+WAE<- rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
+plotWAE <- ifel(WAE>=2.559,1,0)   #2.559
+
+coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
+crs <- '+proj=longlat +datum=WGS84'
+ggplot() +
+  geom_spatraster(data = plotWAE) +
+  geom_spatvector(data=coast,fill=NA)+
+  #coord_sf(crs = crs,xlim=c(-160,180),ylim=c(-56,90))+
+  geom_spatvector(data=breakVect,size=2, shape = 4,color='#ff4f4c',fill='#f26c6a', alpha = 0.8,stroke = 0.3) +   #shape = 21是圆圈，shape = 4是×
+  theme_bw()+
+  #scale_color_manual(values='#fc4e4e', labels='Outbreak of\navian influenza') +
+  scale_fill_gradient(low = "lightgrey",high = "yellow" ,space = "Lab",n.break=2,
+                      labels=c('Low risk','High risk'),na.value='white')+
+  guides(
+    fill=guide_legend()  )+
+  labs(title = NULL)+
+  theme(
+    text = element_text(size = 15),
+    #axis.text = element_text(size = 15),
+    plot.title = element_text(hjust=0.5),
+    # axis.line = element_line(color = 'black'),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 15),
+    legend.position = "none",
+    legend.direction='horizontal',
+    legend.key.width = unit(0.4,'cm'), 
+    legend.key.height = unit(3,'cm')
+  )
+
 
 
 
