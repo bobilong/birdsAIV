@@ -1091,6 +1091,35 @@ NumhotANDcountry_result
 #fwrite(NumhotANDcountry_result,'/root/autodl-tmp/humPoulResult/data/Hot_data/NumhotANDcountry_result.csv')
 
 
+#各国家的鸭子比例------
+
+duck2015<-rast("/root/autodl-tmp/全球家禽/Duck/5_Dk_2015_Da.tif")%>% resample(globalRaster)
+Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
+# poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
+
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+# countries <- c("China", "India", "European Country", "Nigeria", "United States",
+#                "Thailand", "Indonesia", "Ethiopia", "Russian Federation", "Myanmar",
+#                "Japan", "Pakistan", "Vietnam", "Mexico", "Brazil",
+#                "Uganda", "Ukraine", "Burkina Faso", "United Kingdom", "Philippines")
+# selectedCountries <- globalSHP2[globalSHP2$name_ec %in% countries,]
+# countryRaster <- rasterize(selectedCountries, Entropy, field='name_ec')
+countryRaster <- rasterize(globalSHP2, Entropy, field='name_ec')
+
+
+#Numpop_hotAND<-hotAND*popd2015; plot(Numpop_hotAND)
+Numduck_hotAND<-hotAND*duck2015; plot(Numduck_hotAND)
+
+AllhotANDcountry_df <-c(Entropy,Numduck_hotAND,countryRaster) %>% terra::as.data.frame() %>%na.omit()
+head(AllhotANDcountry_df)
+names(AllhotANDcountry_df)<-c("entr","Numduck_hotAND","country")
+
+NumhotANDcountry_result <- AllhotANDcountry_df %>%
+  group_by(country) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+NumhotANDcountry_result
+fwrite(NumhotANDcountry_result,'/root/autodl-tmp/humPoulResult/data/Hot_data/DUCKNumhotANDcountry_result.csv')
 
 
 
