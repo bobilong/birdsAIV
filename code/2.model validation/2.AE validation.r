@@ -6,7 +6,7 @@ library(stringr)
 library(tidyterra)
 
 basePath <- '/root/autodl-tmp/humPoulResult/data/'
-
+#basePath <-'/root/autodl-tmp/result2'
 world.map <- rnaturalearth::ne_countries(returnclass = "sf") |>filter(continent != "Antarctica")
 globalCountry <- vect(world.map) 
 coast <- ne_coastline(scale = "small", returnclass = "sf")
@@ -17,7 +17,7 @@ allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
 speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_model',pattern = '.tif',full.names = T)
 spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
 speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
-
+length(speciesPixelNumPath2)
 
 #######1.Cumulative species months#########
 speciesPixelNum2 <- rast(speciesPixelNumPath2)
@@ -40,7 +40,69 @@ plot(AE)
 
 
 
-#AE-Functional Group#############
+#new WAE 0618按照分月份thin###########
+# speciesPre<-rast('/root/autodl-tmp/result2/presenceRast.tif')
+# 
+# allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
+# 
+# matching_indices <- which(names(speciesPre) %in% allDf$LatName)
+# length(matching_indices)
+# 
+# layers_list <- lapply(1:nlyr(speciesPre), function(i) speciesPre[[i]])
+# 
+# layers_list786 <- layers_list[matching_indices]
+# combined_raster <- rast(layers_list786)
+# #allMonth <- sum(combined_raster,na.rm=T)%>% mask(globalCountry)
+
+
+allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
+speciesPixelNumPath <- list.files('/root/autodl-tmp/SDMsingle',pattern = '.tif',full.names = T)
+spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
+speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
+length(speciesPixelNumPath2)
+
+#######1.Cumulative species months#########
+speciesPixelNum2 <- rast(speciesPixelNumPath2)
+allMonth <- sum(speciesPixelNum2,na.rm=T)%>% mask(globalCountry)
+#writeRaster(allMonth,paste0(basePath,'AE_data/allMonth.tif'), overwrite=T)
+
+#######2.AE##########
+allMonth <- rast(paste0(basePath,'AE_data/allMonth.tif'))
+calEntropy <- lapply(speciesPixelNumPath2, function(x){
+  r <- rast(x) %>% sum(.,na.rm=T)
+  pi <- r/allMonth
+  y <- -pi*log(pi)
+  names(y) <- str_sub(basename(x),1,-5)
+  return(y)
+})
+calEntropy <- rast(calEntropy)
+calEntropy <- clamp(calEntropy, lower=0)# 将所有小于0的值设置为0
+AE<-sum(calEntropy,na.rm = T)%>% mask(globalCountry)
+plot(AE)
+#writeRaster(AE, '/root/autodl-tmp/result2/AE0619.tif', overwrite=T)
+
+#对比
+AE0619<-rast('/root/autodl-tmp/result2/AE0619.tif')
+plot(AE0619)
+AE_used<-rast(paste0(basePath,'AE_data/AE.tif'))
+plot(AE_used)
+
+
+AE_com<-AE0619-AE_used
+AE_com1 <- ifel(AE0619>AE_used,1,0)
+
+plot(AE_com)
+# raster_values <- values(calEntropy)
+# negative_layers <- which(apply(raster_values, 2, function(x) any(x < 0)))# 检查哪些栅格层包含负值
+# print(negative_layers)# 打印出包含负值的栅格层索引
+# 
+
+
+
+
+
+
+
 
 
 
