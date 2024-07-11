@@ -2,6 +2,8 @@ library(data.table)
 library(ggplot2)
 library(terra)
 library(dplyr)
+library(stringr)
+library(paletteer)
 basePath<-"/root/autodl-tmp/humPoulResult/data/"
 
 world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
@@ -818,7 +820,8 @@ library(devtools)
 library(tricolore)
 
 popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)%>% mask(globalCountry)
-Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
+Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)  #used
+#Entropy<-rast('/root/autodl-tmp/result2/AE0620.tif')%>% mask(globalCountry)  #AE0619
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)%>% mask(globalCountry)
 
 # 计算分位数
@@ -889,7 +892,8 @@ plot_res+
 #b############
 
 popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
-Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
+Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)  #used
+#Entropy<-rast('/root/autodl-tmp/result2/AE0620.tif')%>% mask(globalCountry)  #AE0619
 poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
 
 
@@ -931,7 +935,7 @@ for (i in 51:100) {           #6:10
 
 #######(-)重新画一下entr约登指数但50人分位数-----------
 quan_pop <- 50
-quan_entr<- 4.107 #4.107
+quan_entr<- 4.2 #4.107
 quan_poul <- quantiles_poul[1,84]
 #重分类
 pop_new <- ifel(popd2015>quan_pop,1,0)
@@ -1201,6 +1205,548 @@ for (fuc in unique(allDf2CH$`Functional Group`)) {
 #   actEntropy <- rast(calEntropy) %>% sum(na.rm = T)
 #   writeRaster(actEntropy,paste0('/root/autodl-tmp/humPoulResult/data/AE_data/AE_',fuc,'_SH.tif'))
 # }
+
+
+#计算海鸟与其他鸟的交集########
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
+crs <- '+proj=longlat +datum=WGS84'
+
+listfunc <- list.files("/root/autodl-tmp/humPoulResult/data/AE_data/Func5",pattern = '.tif',full.names = T)
+AEfunc<-rast(listfunc)%>% mask(.,globalCountry)
+names(AEfunc) <- c("largewadingbirds",'others','seabirds','shorebirds','waterfowls')
+
+###取阈值
+quantiles_seabirds <- global(AEfunc$seabirds,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+quantiles_shorebirds <- global(AEfunc$shorebirds,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+quantiles_waterfowls <- global(AEfunc$waterfowls,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+quantiles_largewadingbirds <- global(AEfunc$largewadingbirds,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+quantiles_others <- global(AEfunc$others,quantile,probs=seq(0, 1, 0.05),na.rm=T)
+
+
+# AEseabirds <- ifel(AEfunc$seabirds > quantiles_seabirds[1,13],10000,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+# AEshorebirds <- ifel(AEfunc$shorebirds > quantiles_shorebirds[1,13],1000,0)
+# AEwaterfowls <- ifel(AEfunc$waterfowls > quantiles_waterfowls[1,13],100,0)
+# AElargewadingbirds <- ifel(AEfunc$largewadingbirds > quantiles_largewadingbirds[1,13],10,0)
+# AEothers <- ifel(AEfunc$others > quantiles_others[1,13],1,0)
+# 
+# AEseabirds <- ifel(AEfunc$seabirds > quantiles_seabirds[1,15],10000,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+# AEshorebirds <- ifel(AEfunc$shorebirds > quantiles_shorebirds[1,15],1000,0)
+# AEwaterfowls <- ifel(AEfunc$waterfowls > quantiles_waterfowls[1,15],100,0)
+# AElargewadingbirds <- ifel(AEfunc$largewadingbirds > quantiles_largewadingbirds[1,15],10,0)
+# AEothers <- ifel(AEfunc$others > quantiles_others[1,15],1,0)
+
+# AEseabirds <- ifel(AEfunc$seabirds > quantiles_seabirds[1,17],10000,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+# AEshorebirds <- ifel(AEfunc$shorebirds > quantiles_shorebirds[1,17],1000,0)
+# AEwaterfowls <- ifel(AEfunc$waterfowls > quantiles_waterfowls[1,17],100,0)
+# AElargewadingbirds <- ifel(AEfunc$largewadingbirds > quantiles_largewadingbirds[1,17],10,0)
+# AEothers <- ifel(AEfunc$others > quantiles_others[1,17],1,0)
+
+#2海鸟和水禽--------------
+#基础图##############
+AEseabirds <- AEfunc$seabirds
+ggplot() +
+  geom_spatraster(data = AEseabirds) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  theme_bw()+
+  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.75, 1))+
+  #scale_fill_brewer(palette = "RdYlGn")+
+  labs(fill="WAE")+
+  theme(
+    axis.text = element_text(size=12),
+    plot.title = element_text(hjust=0.5),
+    legend.title = element_blank(),
+    legend.text = element_text(size=16),
+    #legend.title = element_text(hjust=0.5),
+    legend.title.align = -10,
+    legend.position = c(0.15, 0.05),#设置图例与主图距离
+    legend.direction='horizontal',#图例水平放置vertical，垂直horizontal，
+    legend.key.width = unit(1.5,'cm'), #图例宽度
+    legend.key.height = unit(0.3,'cm')
+  )
+
+
+AEwaterfowls <- AEfunc$waterfowls
+ggplot() +
+  geom_spatraster(data = AEwaterfowls) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  theme_bw()+
+  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.75, 1))+
+  #scale_fill_brewer(palette = "RdYlGn")+
+  labs(fill="WAE")+
+  theme(
+    axis.text = element_text(size=12),
+    plot.title = element_text(hjust=0.5),
+    legend.title = element_blank(),
+    legend.text = element_text(size=16),
+    #legend.title = element_text(hjust=0.5),
+    legend.title.align = -10,
+    legend.position = c(0.15, 0.05),#设置图例与主图距离
+    legend.direction='horizontal',#图例水平放置vertical，垂直horizontal，
+    legend.key.width = unit(1.5,'cm'), #图例宽度
+    legend.key.height = unit(0.3,'cm')
+  )
+
+
+#50分位图##############
+AEseabirds50 <- ifel(AEseabirds > quantiles_seabirds[1,11],10,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+AEseabirds50_df<-as.data.frame(AEseabirds50,xy=T)
+AEseabirds50_df$seabirds <- factor(AEseabirds50_df$seabirds)
+
+ggplot(AEseabirds50_df) +
+  geom_tile(aes(x = x, y = y, fill = seabirds)) +
+  scale_fill_manual(values = c("0" = "lightgrey","10" = "#6DA7E8")) +  #b036fd  #ffa500  #3da3ef
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none",
+    axis.text = element_text(size=12),
+    panel.grid.major = element_blank(),  # 删除主要的灰色虚线
+    #panel.grid.minor = element_blank(),   # 删除次要的灰色虚线
+    #panel.background = element_rect(fill="white")#背景设置
+  )
+
+
+
+AEwaterfowls50 <- ifel(AEwaterfowls > quantiles_waterfowls[1,11],1,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+AEwaterfowls50_df<-as.data.frame(AEwaterfowls50,xy=T)
+AEwaterfowls50_df$waterfowls <- factor(AEwaterfowls50_df$waterfowls)
+
+ggplot(AEwaterfowls50_df) +
+  geom_tile(aes(x = x, y = y, fill = waterfowls)) +
+  scale_fill_manual(values = c("0" = "lightgrey","1" = "#fff49b")) +  #b036fd  #ffa500  #3da3ef
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none",
+    axis.text = element_text(size=12),
+    panel.grid.major = element_blank(),  # 删除主要的灰色虚线
+    #panel.grid.minor = element_blank(),   # 删除次要的灰色虚线
+    #panel.background = element_rect(fill="white")#背景设置
+  )
+
+#50分位叠加，90分位高亮##############
+AEsw50<-AEseabirds50+AEwaterfowls50
+plot(AEsw50)
+
+AEseabirds10 <- ifel(AEseabirds > quantiles_seabirds[1,19],1,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+AEwaterfowls10 <- ifel(AEwaterfowls > quantiles_waterfowls[1,19],1,0)   #17 是80分位数，11 是50分位数，13 是60分位数，15 是70分位数
+AEsw10<-AEseabirds10+AEwaterfowls10
+plot(AEsw10)
+AEsw10_2 <- ifel(AEsw10 ==2 ,2,0)
+plot(AEsw10_2)
+
+AEsw50_10<-AEsw50+AEsw10_2
+plot(AEsw50_10)
+
+
+AEsw50_10_df<-as.data.frame(AEsw50_10,xy=T) 
+names(AEsw50_10_df)<-c("x","y","sum5010")
+AEsw50_10_df$sum5010 <- factor(AEsw50_10_df$sum5010)
+unique(AEsw50_10_df$sum5010)
+
+# 创建自定义的颜色映射和标签
+custom_colors <- c("0" = "lightgrey", "11" = "#f9a825", "13" = "#E41A1C", 
+                   "1" = "#fff49b", "10" = "#6DA7E8")
+labels <- c("0" = " ", 
+            "13" = "seabirds-waterfowls(>90%)", 
+            "11" = "seabirds-waterfowls(>50%)", 
+            "10" = "seabirds", 
+            "1" = "waterfowls")
+# 绘制图形
+ggplot(AEsw50_10_df) +
+  geom_tile(aes(x = x, y = y, fill = sum5010)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+
+
+
+#####2个叠加------------------
+AEfunc_sum1<-AEseabirds+AEshorebirds
+AEfunc_sum2<-AEseabirds+AEwaterfowls
+AEfunc_sum3<-AEseabirds+AElargewadingbirds
+AEfunc_sum4<-AEseabirds+AEothers
+
+AEfunc_sum1_df<-as.data.frame(AEfunc_sum1,xy=T)
+AEfunc_sum2_df<-as.data.frame(AEfunc_sum2,xy=T) 
+AEfunc_sum3_df<-as.data.frame(AEfunc_sum3,xy=T) 
+AEfunc_sum4_df<-as.data.frame(AEfunc_sum4,xy=T) 
+
+names(AEfunc_sum1_df)<-c("x","y","sum1")
+names(AEfunc_sum2_df)<-c("x","y","sum2")
+names(AEfunc_sum3_df)<-c("x","y","sum3")
+names(AEfunc_sum4_df)<-c("x","y","sum4")
+
+AEfunc_sum1_df$sum1 <- factor(AEfunc_sum1_df$sum1)
+AEfunc_sum2_df$sum2 <- factor(AEfunc_sum2_df$sum2)
+AEfunc_sum3_df$sum3 <- factor(AEfunc_sum3_df$sum3)
+AEfunc_sum4_df$sum4 <- factor(AEfunc_sum4_df$sum4)
+
+unique(AEfunc_sum1_df$sum1)
+unique(AEfunc_sum2_df$sum2)
+unique(AEfunc_sum3_df$sum3)
+unique(AEfunc_sum4_df$sum4)
+
+
+library(rnaturalearth)
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+
+#1 shorebirds
+custom_colors <- c("10000" = "lightblue", "11000" = "#E41A1C")
+labels <- c("10000" = "seabirds", 
+            "11000" = "seabirds-shorebirds")
+ggplot(AEfunc_sum1_df) +
+  geom_tile(aes(x = x, y = y, fill = sum1)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+#  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+#2 waterfowls
+custom_colors <- c("10000" = "lightblue", 
+                   "10100" = "#4DAF4A")
+labels <- c("10000" = "seabirds", 
+            "10100" = "seabirds-waterfowls")
+ggplot(AEfunc_sum2_df) +
+  geom_tile(aes(x = x, y = y, fill = sum2)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+#3 large wading birds
+custom_colors <- c("10000" = "lightblue",
+                   "10010" = "#984EA3")
+labels <- c("10000" = "seabirds", 
+            "10010" = "seabirds-large wading birds")
+ggplot(AEfunc_sum3_df) +
+  geom_tile(aes(x = x, y = y, fill = sum3)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+#4 others
+custom_colors <- c("10000" = "lightblue", "10001" = "#f7a156")
+labels <- c("10000" = "seabirds",
+            "10001" = "seabirds-others")
+# 绘制图形
+ggplot(AEfunc_sum4_df) +
+  geom_tile(aes(x = x, y = y, fill = sum4)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+#####3个叠加------------------
+AEfunc_sum12<-AEseabirds+AEshorebirds+AEwaterfowls
+AEfunc_sum13<-AEseabirds+AEshorebirds+AElargewadingbirds
+AEfunc_sum14<-AEseabirds+AEshorebirds+AEothers
+AEfunc_sum23<-AEseabirds+AEwaterfowls+AElargewadingbirds
+AEfunc_sum24<-AEseabirds+AEwaterfowls+AEothers
+AEfunc_sum34<-AEseabirds+AElargewadingbirds+AEothers
+
+AEfunc_sum12_df <- as.data.frame(AEfunc_sum12, xy = TRUE)
+AEfunc_sum13_df <- as.data.frame(AEfunc_sum13, xy = TRUE)
+AEfunc_sum14_df <- as.data.frame(AEfunc_sum14, xy = TRUE)
+AEfunc_sum23_df <- as.data.frame(AEfunc_sum23, xy = TRUE)
+AEfunc_sum24_df <- as.data.frame(AEfunc_sum24, xy = TRUE)
+AEfunc_sum34_df <- as.data.frame(AEfunc_sum34, xy = TRUE)
+
+names(AEfunc_sum12_df) <- c("x", "y", "sum12")
+names(AEfunc_sum13_df) <- c("x", "y", "sum13")
+names(AEfunc_sum14_df) <- c("x", "y", "sum14")
+names(AEfunc_sum23_df) <- c("x", "y", "sum23")
+names(AEfunc_sum24_df) <- c("x", "y", "sum24")
+names(AEfunc_sum34_df) <- c("x", "y", "sum34")
+
+AEfunc_sum12_df$sum12 <- factor(AEfunc_sum12_df$sum12)
+AEfunc_sum13_df$sum13 <- factor(AEfunc_sum13_df$sum13)
+AEfunc_sum14_df$sum14 <- factor(AEfunc_sum14_df$sum14)
+AEfunc_sum23_df$sum23 <- factor(AEfunc_sum23_df$sum23)
+AEfunc_sum24_df$sum24 <- factor(AEfunc_sum24_df$sum24)
+AEfunc_sum34_df$sum34 <- factor(AEfunc_sum34_df$sum34)
+
+unique(AEfunc_sum12_df$sum12)
+unique(AEfunc_sum13_df$sum13)
+unique(AEfunc_sum14_df$sum14)
+unique(AEfunc_sum23_df$sum23)
+unique(AEfunc_sum24_df$sum24)
+unique(AEfunc_sum34_df$sum34)
+
+# 定义颜色和标签
+custom_colors_12 <- c("10000" = "lightblue", "11100" = "#BF4F4A")
+labels_12 <- c("10000" = "seabirds", "11100" = "seabirds-shorebirds-waterfowls")
+
+custom_colors_13 <- c("10000" = "lightblue", "11010" = "#BF4F4A")
+labels_13 <- c("10000" = "seabirds", "11010" = "seabirds-shorebirds-largewadingbirds")
+
+custom_colors_14 <- c("10000" = "lightblue", "11001" = "#BF4F4A")
+labels_14 <- c("10000" = "seabirds", "11001" = "seabirds-shorebirds-others")
+
+custom_colors_23 <- c("10000" = "lightblue", "10110" = "#BF4F4A")
+labels_23 <- c("10000" = "seabirds", "10110" = "seabirds-waterfowls-largewadingbirds")
+
+custom_colors_24 <- c("10000" = "lightblue", "10101" = "#BF4F4A")
+labels_24 <- c("10000" = "seabirds", "10101" = "seabirds-waterfowls-others")
+
+custom_colors_34 <- c("10000" = "lightblue", "10011" = "#BF4F4A")
+labels_34 <- c("10000" = "seabirds", "10011" = "seabirds-largewadingbirds-others")
+
+
+
+library(rnaturalearth)
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+
+ggplot(AEfunc_sum12_df) +
+  geom_tile(aes(x = x, y = y, fill = sum12)) +
+  scale_fill_manual(values = custom_colors_12, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_12),  # 保留特定的颜色映射
+                    labels = labels_12) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+ggplot(AEfunc_sum13_df) +
+  geom_tile(aes(x = x, y = y, fill = sum13)) +
+  scale_fill_manual(values = custom_colors_13, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_13),  # 保留特定的颜色映射
+                    labels = labels_13) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+ggplot(AEfunc_sum14_df) +
+  geom_tile(aes(x = x, y = y, fill = sum14)) +
+  scale_fill_manual(values = custom_colors_14, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_14),  # 保留特定的颜色映射
+                    labels = labels_14) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+ggplot(AEfunc_sum23_df) +
+  geom_tile(aes(x = x, y = y, fill = sum23)) +
+  scale_fill_manual(values = custom_colors_23, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_23),  # 保留特定的颜色映射
+                    labels = labels_23) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+ggplot(AEfunc_sum24_df) +
+  geom_tile(aes(x = x, y = y, fill = sum24)) +
+  scale_fill_manual(values = custom_colors_24, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_24),  # 保留特定的颜色映射
+                    labels = labels_24) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+ggplot(AEfunc_sum34_df) +
+  geom_tile(aes(x = x, y = y, fill = sum34)) +
+  scale_fill_manual(values = custom_colors_34, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors_34),  # 保留特定的颜色映射
+                    labels = labels_34) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  #coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+
+
+
+
+#####5个------------------
+
+# 定义颜色和标签
+custom_colors <- c(
+  "0" = "grey", 
+  "1" = "#f7a156", 
+  "2" = "#984EA3", 
+  "3" = "#7E6FC9", 
+  "4" = "#4DAF4A", 
+  "5" = "#3B8F4A",
+  "6" = "#77D24A",
+  "7" = "#9FE74A",
+  "8" = "#E41A1C", 
+  "9" = "#D7204A",
+  "10" = "#BF4F4A",
+  "11" = "#A97E4A",
+  "12" = "#377EB8", 
+  "13" = "#6DA7E8",
+  "14" = "#9DCAF8",
+  "15" = "#CADDF8",
+  "16" = "#00A0B0",
+  "17" = "#17B5B0",
+  "18" = "#35CBB0",
+  "19" = "#53D1B0",
+  "20" = "#71D7B0",
+  "21" = "#8FDD80",
+  "22" = "#ADD260",
+  "23" = "#CABF40",
+  "24" = "#E9A420",
+  "25" = "#F88A00",
+  "26" = "#F86300",
+  "27" = "#F83C00",
+  "28" = "#F81500",
+  "29" = "#F80E0E",
+  "30" = "#F81717",
+  "31" = "#F83030"
+)
+
+AEfunc_sum<-AEseabirds+AEshorebirds+AEwaterfowls+AElargewadingbirds+AEothers
+#plot(AEfunc_sum)
+
+library(rnaturalearth)
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+AEfunc_sum_df<-as.data.frame(AEfunc_sum,xy=T) 
+names(AEfunc_sum_df)<-c("x","y","sum5")
+AEfunc_sum_df$sum5 <- factor(AEfunc_sum_df$sum5)
+
+unique(AEfunc_sum_df$sum5)
+#grid.col[c("Seabirds", "Shorebirds", "Waterfowls", "Large wading birds","Others")] = c("#377EB8","#E41A1C","#4DAF4A","#984EA3","#f7a156") #c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#f7a156") 
+# 创建自定义的颜色映射和标签
+custom_colors <- c("10000" = "lightblue", "11" = "#E41A1C", 
+                   "21" = "#4DAF4A", "31" = "#984EA3", "41" = "#f7a156")
+labels <- c("1" = "seabirds", 
+            "11" = "seabirds-shorebirds", 
+            "21" = "seabirds-waterfowls", 
+            "31" = "seabirds-large wading birds", 
+            "41" = "seabirds-others")
+# 绘制图形
+ggplot(AEfunc_sum_df) +
+  geom_tile(aes(x = x, y = y, fill = sum5)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
 
 
 
@@ -1885,11 +2431,11 @@ globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
 globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
 Con_5Raster <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_ec')
 
-Global_birdEntropy_df <- c(AE_Func,pop_log,poul_log,pop,poul,Con_5Raster) %>% as.data.frame()
+Global_birdEntropy_df <- c(AE_Func,pop_log,poul_log,pop,poul,Con_5Raster) %>% as.data.frame(.,xy=T)
 
-names(Global_birdEntropy_df) <- c('Large wading birds','Others','Seabirds','Shorebirds','Waterfowls','Population(Log)','Poltry(Log)','pop','poul',"Country")
+names(Global_birdEntropy_df) <- c('x','y','Large wading birds','Others','Seabirds','Shorebirds','Waterfowls','Population(Log)','Poltry(Log)','pop','poul',"Country")
 Global_birdEntropy_df <- Global_birdEntropy_df%>%
-  dplyr::select('Seabirds','Shorebirds','Waterfowls','Large wading birds','Others','Population(Log)','Poltry(Log)','pop','poul',"Country")
+  dplyr::select('x','y','Seabirds','Shorebirds','Waterfowls','Large wading birds','Others','Population(Log)','Poltry(Log)','pop','poul',"Country")
 summary(Global_birdEntropy_df)
 #fwrite(Global_birdEntropy_df,'/root/autodl-tmp/zyresult/Global_birdEntropy_df.csv')
 
@@ -2378,6 +2924,36 @@ Global_birdEntropy_dfna <- Global_birdEntropy_dfna %>%
     Guide == `Large wading birds` ~ "Large wading birds",
     Guide == Others ~ "Others"
   ))
+
+#空间图
+Global_birdEntropy_dfna$Guide<-factor(Global_birdEntropy_dfna$Guide)
+custom_colors <- c("Seabirds" = "#377EB8", "Shorebirds" = "#E41A1C", "Waterfowls" = "#4DAF4A", 
+                   "Large wading birds" = "#984EA3", "Others" = "#f7a156")
+labels <- c("Seabirds" = "Seabirds", 
+            "Shorebirds" = "Shorebirds", 
+            "Waterfowls" = "Waterfowls", 
+            "Large wading birds" = "Large wading birds", 
+            "Others" = "Others")
+ggplot(Global_birdEntropy_dfna) +
+  geom_tile(aes(x = x, y = y, fill = Guide)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+
+
 
 # 统计每个国家的Guide类别的像元数量
 country_guide_count <- Global_birdEntropy_dfna %>%
