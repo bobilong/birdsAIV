@@ -812,6 +812,145 @@ proportion <- num_points_in_country / total_points ; proportion
 
 
 
+
+#——————————————————————————————————————————————————————————-----------------
+
+#######Fig3. new cattle#########################
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+
+popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
+Entropy<-rast("/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif")
+poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
+cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif") %>% resample(globalRaster)
+
+
+quantiles_pop <- global(popd2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_entr<- global(Entropy,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_poul<- global(poul2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_cattle<- global(cattle2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+
+
+quan_pop <- 50
+quan_entr<- 4.19 #4.107
+quan_poul <- quantiles_poul[1,84]
+quan_cattle <- quantiles_cattle[1,84]
+
+#重分类
+pop_new <- ifel(popd2015>quan_pop,1,0)
+entr_new <- ifel(Entropy>quan_entr,10,0)
+poul_new <- ifel(poul2015>quan_poul,2,0)
+cattle_new <- ifel(cattle2015>quan_cattle,4,0)
+
+hotentrpoppoulcat <- pop_new+entr_new+poul_new+cattle_new   ;plot(hotentrpoppoulcat)
+hotAND <- ifel(hotentrpoppoulcat==17,1,0)  ; plot(hotAND); global(hotAND,sum,na.rm=T)
+#writeRaster(hotentrpoppoulcat, "/root/autodl-tmp/humPoulResult/data/Hot_data/hotentrpoppoulcat.tif")
+# hotOR_pop <- ifel(hotentrpoppoulcat==11|hotentrpoppoulcat==13,1,0) ; plot(hotOR_pop)
+# hotOR_poul <- ifel(hotentrpoppoulcat==12|hotentrpoppoulcat==13,1,0)  ; plot(hotOR_poul)
+# hotOR_cattle <- ifel(hotentrpopcattle==12|hotentrpopcattle==13,1,0)  ; plot(hotOR_cattle)
+# Nonehot<- ifel(hotentrpoppoulcat==0,1,0)  ; plot(Nonehot); global(Nonehot,sum,na.rm=T)
+
+library(rnaturalearth)
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+hotentrpoppoulcat_df<-as.data.frame(hotentrpoppoulcat,xy=T) 
+names(hotentrpoppoulcat_df)<-c("x","y","hot")
+unique(hotentrpoppoulcat_df$hot)
+
+
+custom_colors <- c(#"0" = "white", "1" = "white","2" = "white","3" = "white","4" = "white",
+  #"5" = "white","6" = "white","7" = "white","10" = "white",
+  "0" = "lightgrey", "1" = "lightgrey","2" = "lightgrey","3" = "lightgrey","4" = "lightgrey",
+  "5" = "lightgrey","6" = "lightgrey","7" = "lightgrey","10" = "lightgrey",
+  "11" = "#FE97A4", "12" = "#71A3F1", "14" = "#EBBF00",  "13" = "#EA68A2", 
+  "15" = "#EB7100", "16" = "#9BB31D", "17" = "#E53341")
+labels <- c(#"0" = " ", "1" = " ","2" = " ","3" = " ","4" = " ","5" = " ","6" = " ","7" = " ","10" = " ",
+  "12" = "Poultry to WAE", 
+  "11" = "Human to WAE", 
+  "14" = "Cattle to WAE", 
+  "16" = "Cattle-Poultry to WAE", 
+  "13" = "Human-Poultry to WAE", 
+  "15" = "Human-Cattle to WAE", 
+  "17" = "Human-Poultry-Cattle to WAE")
+# 绘制图形
+hotentrpoppoulcat_df$hot<-factor(hotentrpoppoulcat_df$hot)
+ggplot(hotentrpoppoulcat_df) +
+  geom_tile(aes(x = x, y = y, fill = hot)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = c("12", "14", "11", "16", "15", "13", "17"),  # 只保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "right",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+#主图七色统计-------------
+plot(hotentrpoppoulcat)
+
+hot4_df<-c(hotentrpoppoulcat, popd2015, poul2015 ,cattle2015) %>% terra::as.data.frame(.,xy=T) %>%na.omit()
+head(hot4_df)
+names(hot4_df)<-c("x","y","type","pop","poul","cattle")
+
+Num_result <- hot4_df %>%
+  group_by(type) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+Num_result
+
+# 合并 type 列中 0 到 10 的值为 0
+Num_result <- Num_result %>%
+  mutate(type = ifelse(type <= 10, 0, type))
+# 将 type 列转换为因子，并指定级别顺序
+Num_result$type <- factor(Num_result$type, levels = c(12, 14, 11, 16, 15, 13, 17, 0))
+
+
+custom_colors <- c(#"0" = "white", "1" = "white","2" = "white","3" = "white","4" = "white",
+  #"5" = "white","6" = "white","7" = "white","10" = "white",
+  "0" = "lightgrey",
+  "11" = "#FE97A4", "12" = "#71A3F1", "14" = "#EBBF00",  "13" = "#EA68A2", 
+  "15" = "#EB7100", "16" = "#9BB31D", "17" = "#E53341")
+labels <- c("0" = " ",
+  "12" = "Poultry to WAE", 
+  "11" = "Human to WAE", 
+  "14" = "Cattle to WAE", 
+  "16" = "Cattle-Poultry to WAE", 
+  "13" = "Human-Poultry to WAE", 
+  "15" = "Human-Cattle to WAE", 
+  "17" = "Human-Poultry-Cattle to WAE")
+# 绘制圆环图
+ggplot(Num_result, aes(x = factor(1), y = pop, fill = factor(type))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = custom_colors, labels = labels) +
+  theme_void() +
+  labs(fill = "Type")+
+  theme(
+    legend.position = "none")  # 显示图例
+
+ggplot(Num_result, aes(x = factor(1), y = poul, fill = factor(type))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = custom_colors, labels = labels) +
+  theme_void() +
+  labs(fill = "Type") +
+  ggtitle("Poultry Distribution")
+
+ggplot(Num_result, aes(x = factor(1), y = cattle, fill = factor(type))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = custom_colors, labels = labels) +
+  theme_void() +
+  labs(fill = "Type") +
+  ggtitle("Cattle Distribution")
+
+
+
 #——————————————————————————————————————————————————————————-----------------
 
 #######Fig3. Hotspots#########################

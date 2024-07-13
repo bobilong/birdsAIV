@@ -1176,6 +1176,201 @@ legend <- ggplot(data = bivariate_color_scale1) +
 print(legend)
 
 
+
+
+#new: 牲畜 牛cattle-------------
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+
+cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif")
+Entropy<-rast("/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif")
+
+world.map <- ne_countries(returnclass = "sf") |>filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+#预处理
+cattle2015_m <- trim(mask(cattle2015, globalCountry))
+Entropy_m <- trim(mask(Entropy, globalCountry))  ;plot(Entropy_m)
+
+cattle2015_r <- resample(cattle2015_m, Entropy_m, method="bilinear");plot(cattle2015_r)
+Entropy_m <- trim(mask(Entropy_m, cattle2015_r))
+Entropy_e <- extend(Entropy_m, cattle2015_r);plot(Entropy_e)
+
+cattle2015_df <- as.data.frame(cattle2015_r, xy=TRUE)
+Entropy_df <- as.data.frame(Entropy_e, xy=TRUE)
+
+#对数据进行归一化处理，统一度量方便展示：
+# 定义归一化函数
+normalize <- function(x) {
+  return((x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE)))
+}
+#####归一化处理
+head(cattle2015_df)   #查看数据列的名字为popd2015_30
+names(cattle2015_df)<-c("x","y","cattle")
+cattle2015_df$cattle2015_30_normalized <- normalize(cattle2015_df$cattle)
+head(Entropy_df)   #查看数据列的名字为sum
+Entropy_df$sum_normalized <- normalize(Entropy_df$sum)
+
+cattleentr_df <- left_join(cattle2015_df, Entropy_df, by = c("x", "y"))
+cattleentr_df <- na.omit(cattleentr_df)
+head(cattleentr_df)
+names(cattleentr_df)<-c("x","y","cattle","cattle_n","entr","entr_n")
+
+
+# cattleentr_df$color_n <- with(cattleentr_df, cattlen + entrn)
+# 
+# ggplot(cattleentr_df, aes(x = x, y = y, fill = color_n)) +
+#   geom_tile() +
+#   scale_fill_gradientn(colours  = c("blue", "green", "yellow", "red")) +
+#   theme_minimal() +
+#   labs(fill = "cattlen + entrn") +
+#   coord_fixed()
+
+#####(1)设置10个分位数
+quantiles_cattle <- cattleentr_df %>%
+  pull(cattle_n) %>%
+  quantile(probs = seq(0, 1, length.out = 11))
+quantiles_cattle
+
+
+quantiles_entr <- cattleentr_df %>%
+  pull(entr_n) %>%
+  quantile(probs = seq(0, 1, length.out = 11))
+
+quantiles_entr 
+
+
+
+
+#设置10*10颜色变量
+bivariate_color_scale <- tibble(
+  "1 - 10" ="#00FFFF","2 - 10" = "#11E6FD", "3 - 10" ="#23CDFB","4 - 10" = "#35B4FA","5 - 10" ="#479BF8","6 - 10"= "#5883F6","7 - 10" ="#6A6AF5","8 - 10" ="#7C51F3","9 - 10" ="#8E38F1","10 - 10" ="#A020F0",
+  "1 - 9" = "#1BFDFB", "2 - 9" = "#2AE4F7", "3 - 9" = "#3ACCF4", "4 - 9" = "#4AB4F0","5 - 9" = "#5A9CED","6 - 9" = "#6A83E9","7 - 9" = "#7A6BE6","8 - 9" = "#8A53E2","9 - 9" = "#9A3BDF","10 - 9" = "#AA23DC",
+  "1 - 8" = "#36FCF7", "2 - 8" = "#44E4F1", "3 - 8" = "#52CCEC", "4 - 8" = "#60B5E7","5 - 8" = "#6E9DE2","6 - 8" = "#7C85DC","7 - 8" = "#8A6ED7","8 - 8" = "#9856D2","9 - 8" = "#A63ECD","10 - 8" = "#B527C8",
+  "1 - 7" = "#51FBF3", "2 - 7" = "#5DE3EC", "3 - 7" = "#69CCE5", "4 - 7" = "#75B5DE","5 - 7" = "#819ED7","6 - 7" = "#8E86D0","7 - 7" = "#9A6FC9","8 - 7" = "#A658C2","9 - 7" = "#B241BB","10 - 7" = "#BF2AB5",
+  "1 - 6" = "#6CFAEF", "2 - 6" = "#76E3E6", "3 - 6" = "#80CCDD", "4 - 6" = "#8BB6D5","5 - 6" = "#959FCC","6 - 6" = "#A088C3","7 - 6" = "#AA72BB","8 - 6" = "#B55BB2","9 - 6" = "#BF44A9","10 - 6" = "#CA2EA1",
+  "1 - 5" = "#88F9EB", "2 - 5" = "#90E2E0", "3 - 5" = "#98CCD6", "4 - 5" = "#A1B6CB","5 - 5" = "#A9A0C1","6 - 5" = "#B289B7","7 - 5" = "#BA73AD","8 - 5" = "#C35DA2","9 - 5" = "#CB4798","10 - 5" = "#D4318E",
+  "1 - 4" = "#A3F8E7", "2 - 4" = "#A9E2DA", "3 - 4" = "#B0CCCE", "4 - 4" = "#B7B7C2","5 - 4" = "#BDA1B6","6 - 4" = "#C48BAA","7 - 4" = "#CB769E","8 - 4" = "#D16092","9 - 4" = "#D84A86","10 - 4" = "#DF357A",
+  "1 - 3" = "#BEF7E3", "2 - 3" = "#C2E1D5", "3 - 3" = "#C7CCC7", "4 - 3" = "#CCB7B9","5 - 3" = "#D1A2AB","6 - 3" = "#D58C9E","7 - 3" = "#DA7790","8 - 3" = "#DF6282","9 - 3" = "#E44D74","10 - 3" = "#E93867",
+  "1 - 2" = "#D9F6DF", "2 - 2" = "#DBE1CF", "3 - 2" = "#DFCCBF", "4 - 2" = "#E2B8B0","5 - 2" = "#E5A3A0","6 - 2" = "#E88E91","7 - 2" = "#EB7981","8 - 2" = "#EE6572","9 - 2" = "#F15062","10 - 2" = "#F43C53",
+  "1 - 1" = "#F5F5DC", "2 - 1" = "#F6E0CA", "3 - 1" = "#F7CCB9", "4 - 1" = "#F8B8A8","5 - 1" = "#F9A496","6 - 1" = "#FA9085","7 - 1" = "#FB7C74","8 - 1" = "#FC6862","9 - 1" = "#FD5451","10 - 1" = "#FF4040",
+  
+) %>%
+  gather("group", "fill")
+
+#####(2)分配
+cattleentr_df1 <- cattleentr_df %>%
+  mutate(
+    cattle_quantiles = cut(cattle_n, breaks = quantiles_cattle, include.lowest = TRUE, labels = FALSE),
+    entr_quantiles = cut(entr_n, breaks = quantiles_entr, include.lowest = TRUE, labels = FALSE)
+  ) %>%
+  # 将分位数转换为数字，并创建一个新的组合列
+  mutate(
+    group = paste(as.numeric(cattle_quantiles), "-", as.numeric(entr_quantiles))
+  ) %>%
+  # 假设您已经有了一个颜色表bivariate_color_scale，其中包含group和对应的颜色值
+  left_join(bivariate_color_scale, by = "group") # 将颜色值与主数据框合并
+
+
+
+#####(3)绘制地图
+library(rnaturalearth)
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+
+map<-ggplot(cattleentr_df1) +
+  geom_tile(aes(x = x, y = y,fill = fill)) +
+  scale_fill_identity() +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  #geom_sf(data = canton_geo, fill = NA, color = "white", size = 0.5) +    # 为行政区划绘制边界
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none"
+  )
+print(map)
+
+
+# bivariate_color_scale是颜色表，并且包含group和对应的颜色值
+# 分离group列为cattle和entr两个独立的列，并转换为整数类型
+bivariate_color_scale1 <- bivariate_color_scale %>%
+  separate(group, into = c("cattle", "entr"), sep = " - ", convert = TRUE) %>%
+  mutate(
+    cattle = as.integer(cattle),
+    entr = as.integer(entr)
+  )
+
+#绘制图例
+legend <- ggplot(data = bivariate_color_scale1) +
+  geom_tile(mapping = aes(x = cattle, y = entr, fill = fill)) +
+  scale_fill_identity() +
+  labs(x = "Higher cattle density ⟶️",
+       y = "Higher WAE ⟶️") +
+  theme_void() +  # 使用theme_void()来移除多余的元素
+  theme(
+    axis.title.x = element_text(size = 16, angle = 0),  # 旋转X轴标题
+    axis.title.y = element_text(size = 16, angle = 90),   # 旋转Y轴标题
+    plot.margin = margin(t = 10, r = 10, b = 30, l = 10)  # 调整图表边距
+  ) +
+  coord_fixed()  # 保持坐标比例固定
+print(legend)
+
+#hotsopt-----
+##二元的：活动熵和牛
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+
+popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
+cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif") %>% resample(globalRaster)
+Entropy<-rast("/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif")
+
+#####国家矢量
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+
+
+###取阈值
+quantiles_pop <- global(popd2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_entr<- global(Entropy,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_cattle<- global(cattle2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+
+quan_pop <- 50
+quan_entr<- 4.19
+quan_cattle <- quantiles_cattle[1,84]
+#重分类
+pop_new <- ifel(popd2015 > quan_pop,1,0)
+entr_new <- ifel(Entropy > quan_entr,10,0)
+cattle_new <- ifel(cattle2015 > quan_cattle,2,0)
+
+hotentrpopcattle <- pop_new+entr_new+cattle_new
+hotAND <- ifel(hotentrpopcattle==13,1,0)  ; plot(hotAND)
+hotOR_pop <- ifel(hotentrpopcattle==11|hotentrpopcattle==13,1,0) ; plot(hotOR_pop)
+hotOR_cattle <- ifel(hotentrpopcattle==12|hotentrpopcattle==13,1,0)  ; plot(hotOR_cattle)
+
+#二元作图
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+
+plot(hotOR_cattle)
+hotOR_cattle_df<-as.data.frame(hotOR_cattle,xy=T) 
+names(hotOR_cattle_df)<-c("x","y","hot")
+ggplot(hotOR_cattle_df) +
+  geom_tile(aes(x = x, y = y, fill = factor(hot))) +
+  scale_fill_manual(values = c("0" = "grey", "1" = "#885c15")) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none"
+  )
+
+
+
+
+
+
+
+
 #c、d-----------
 popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
 Entropy<-rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)
