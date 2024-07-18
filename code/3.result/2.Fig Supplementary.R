@@ -1027,7 +1027,7 @@ legend <- ggplot(data = bivariate_color_scale1) +
 print(legend)
 
 
-#b :  家禽和活动熵栅格二元-------------
+#c :  家禽和活动熵栅格二元-------------
 # duck2015_r<-raster(duck2015_r)
 # chic2015_r<-raster(chic2015_r)
 # # 定义一个自定义函数，该函数将两个数值相加，并在其中一个为NA时保留另一个值
@@ -1178,7 +1178,7 @@ print(legend)
 
 
 
-#new: 牲畜 牛cattle-------------
+#b: 牲畜 牛cattle-------------
 globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
 
 cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif")

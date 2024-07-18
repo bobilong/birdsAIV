@@ -845,6 +845,7 @@ hotentrpoppoulcat <- pop_new+entr_new+poul_new+cattle_new   ;plot(hotentrpoppoul
 hotAND <- ifel(hotentrpoppoulcat==17,1,0)  ; plot(hotAND); global(hotAND,sum,na.rm=T)
 #writeRaster(hotentrpoppoulcat, "/root/autodl-tmp/humPoulResult/data/Hot_data/hotentrpoppoulcat.tif")
 # hotOR_pop <- ifel(hotentrpoppoulcat==11|hotentrpoppoulcat==13,1,0) ; plot(hotOR_pop)
+
 # hotOR_poul <- ifel(hotentrpoppoulcat==12|hotentrpoppoulcat==13,1,0)  ; plot(hotOR_poul)
 # hotOR_cattle <- ifel(hotentrpopcattle==12|hotentrpopcattle==13,1,0)  ; plot(hotOR_cattle)
 # Nonehot<- ifel(hotentrpoppoulcat==0,1,0)  ; plot(Nonehot); global(Nonehot,sum,na.rm=T)
@@ -860,7 +861,7 @@ unique(hotentrpoppoulcat_df$hot)
 custom_colors <- c(#"0" = "white", "1" = "white","2" = "white","3" = "white","4" = "white",
   #"5" = "white","6" = "white","7" = "white","10" = "white",
   "0" = "lightgrey", "1" = "lightgrey","2" = "lightgrey","3" = "lightgrey","4" = "lightgrey",
-  "5" = "lightgrey","6" = "lightgrey","7" = "lightgrey","10" = "lightgrey",
+  "5" = "lightgrey","6" = "lightgrey","7" = "lightgrey","10" = "#808080",
   "11" = "#FE97A4", "12" = "#71A3F1", "14" = "#EBBF00",  "13" = "#EA68A2", 
   "15" = "#EB7100", "16" = "#9BB31D", "17" = "#E53341")
 labels <- c(#"0" = " ", "1" = " ","2" = " ","3" = " ","4" = " ","5" = " ","6" = " ","7" = " ","10" = " ",
@@ -876,7 +877,7 @@ hotentrpoppoulcat_df$hot<-factor(hotentrpoppoulcat_df$hot)
 ggplot(hotentrpoppoulcat_df) +
   geom_tile(aes(x = x, y = y, fill = hot)) +
   scale_fill_manual(values = custom_colors, 
-                    na.value = "lightgrey",  # 设置NA值为灰色
+                    na.value = "white",  # 设置NA值为灰色
                     breaks = c("12", "14", "11", "16", "15", "13", "17"),  # 只保留特定的颜色映射
                     labels = labels) +  # 添加标签
   geom_spatvector(data = coast, fill = NA) +
@@ -884,7 +885,7 @@ ggplot(hotentrpoppoulcat_df) +
   labs(x = NULL, y = NULL) +
   theme_bw() +
   theme(
-    legend.position = "right",  # 显示图例
+    legend.position = "none",  # 显示图例
     legend.text = element_text(size= 12),
     axis.text = element_text(size = 12),
     panel.grid.major = element_blank()
@@ -903,11 +904,11 @@ Num_result <- hot4_df %>%
   summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
 Num_result
 
-# 合并 type 列中 0 到 10 的值为 0
-Num_result <- Num_result %>%
-  mutate(type = ifelse(type <= 10, 0, type))
-# 将 type 列转换为因子，并指定级别顺序
-Num_result$type <- factor(Num_result$type, levels = c(12, 14, 11, 16, 15, 13, 17, 0))
+# # 合并 type 列中 0 到 10 的值为 0
+# Num_result <- Num_result %>%
+#   mutate(type = ifelse(type <= 10, 0, type))
+# # 将 type 列转换为因子，并指定级别顺序
+# Num_result$type <- factor(Num_result$type, levels = c(12, 14, 11, 16, 15, 13, 17, 0))
 
 
 custom_colors <- c(#"0" = "white", "1" = "white","2" = "white","3" = "white","4" = "white",
@@ -949,12 +950,201 @@ ggplot(Num_result, aes(x = factor(1), y = cattle, fill = factor(type))) +
   labs(fill = "Type") +
   ggtitle("Cattle Distribution")
 
+#附图Hoptsots统计数量----------------------
+
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+
+popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
+Entropy<-rast("/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif")
+poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
+cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif") %>% resample(globalRaster)
+
+quantiles_pop <- global(popd2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_entr<- global(Entropy,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_poul<- global(poul2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_cattle<- global(cattle2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+
+quan_pop <- 50
+quan_entr<- 4.19 #4.107
+quan_poul <- quantiles_poul[1,84]
+quan_cattle <- quantiles_cattle[1,84]
+
+pop_new <- ifel(popd2015>quan_pop,1,0)
+entr_new <- ifel(Entropy>quan_entr,10,0)
+poul_new <- ifel(poul2015>quan_poul,2,0)
+cattle_new <- ifel(cattle2015>quan_cattle,4,0)
+
+hotentrpoppoulcat <- pop_new+entr_new+poul_new+cattle_new   ;plot(hotentrpoppoulcat)
+
+hotentrpoppoulcat2 <- ifel(hotentrpoppoulcat < 10,0,hotentrpoppoulcat)
+
+#Continent (population)
+Continent_vect<- vect ("/root/autodl-tmp/worldBorder/continentNew.shp") |> dplyr::filter(CONTINENT != "Antarctica")
+ContinentRaster <- rasterize(Continent_vect,Entropy,field='CONTINENT')
+
+plot(hotentrpoppoulcat2)
+
+hot4_df<-c(hotentrpoppoulcat2, popd2015, poul2015 ,cattle2015, ContinentRaster) %>% terra::as.data.frame(.,xy=T) %>%na.omit()
+head(hot4_df)
+names(hot4_df)<-c("x","y","type","pop","poul","cattle","continent")
+
+Num_result <- hot4_df %>%
+  group_by(continent,type) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+Num_result
+fwrite(Num_result,'/root/autodl-tmp/humPoulResult/data/Hot_data/Num_result_hotspot_conti.csv')
+
+#country(population)
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+cRaster <- rasterize(globalSHP2,Entropy,field='name_ec')
+
+hot4_df<-c(hotentrpoppoulcat2, popd2015, poul2015 ,cattle2015, cRaster) %>% terra::as.data.frame(.,xy=T) %>%na.omit()
+head(hot4_df)
+names(hot4_df)<-c("x","y","type","pop","poul","cattle","country")
+
+Num_result <- hot4_df %>%
+  group_by(country,type) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+Num_result
+
+countries_to_keep <- c("United States", "India", "European Country", "China", "Nigeria")
+                       #"Russian Federation", "Ethiopia", "Brazil", "Tanzania", "Argentina", "Australia", "South Africa", "Sudan", "Indonesia", "Mexico", "Chad", "Myanmar", "South Sudan", "Ukraine", "Kenya")
+filtered_df <- Num_result[Num_result$country %in% countries_to_keep, ]
+filtered_df <- filtered_df[order(match(filtered_df$country, countries_to_keep)), ]
+filtered_df
+fwrite(filtered_df,'/root/autodl-tmp/humPoulResult/data/Hot_data/Num_result_hotspot_country.csv')
 
 
 
 
 
 
+
+#附图二元：三类分别的统计----------------------
+#1.面积（在arcgis里处理后excel统计）-----------
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+
+popd2015<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)
+Entropy<-rast("/root/autodl-tmp/humPoulResult/data/AE_data/AE.tif")
+poul2015<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif")%>% resample(globalRaster)
+cattle2015<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif") %>% resample(globalRaster)
+
+
+quantiles_pop <- global(popd2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_entr<- global(Entropy,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_poul<- global(poul2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+quantiles_cattle<- global(cattle2015,quantile,probs=seq(0, 1, 0.01),na.rm=T)
+
+
+quan_pop <- 50
+quan_entr<- 4.19 #4.107
+quan_poul <- quantiles_poul[1,84]
+quan_cattle <- quantiles_cattle[1,84]
+
+#重分类
+pop_high <- ifel(popd2015>quan_pop,1,0)
+poul_high <- ifel(poul2015>quan_poul,1,0)
+cattle_high <- ifel(cattle2015>quan_cattle,1,0) 
+entr_high <- ifel(Entropy>quan_entr,10,0)
+
+pop_exposed <- entr_high+pop_high  ; plot(pop_exposed)
+pop_exposed_1 <- ifel(pop_exposed==11,1,0)  ; plot(pop_exposed_1)
+#writeRaster(pop_exposed_1, "/root/autodl-tmp/humPoulResult/data/Hot_data/pop_exposed_1.tif")
+
+poul_exposed<- entr_high+poul_high  ; plot(poul_exposed)
+poul_exposed_1<- ifel(poul_exposed==11,1,0)  ; plot(poul_exposed_1)
+#writeRaster(poul_exposed_1, "/root/autodl-tmp/humPoulResult/data/Hot_data/poul_exposed_1.tif")
+
+cattle_exposed<- entr_high+cattle_high  ; plot(cattle_exposed)
+cattle_exposed_1<- ifel(cattle_exposed==11,1,0)  ; plot(cattle_exposed_1)
+#writeRaster(cattle_exposed_1, "/root/autodl-tmp/humPoulResult/data/Hot_data/cattle_exposed_1.tif")
+
+
+#画图
+coast <- ne_coastline(scale = "small", returnclass = "sf") %>% vect()
+crs <- '+proj=longlat +datum=WGS84'
+
+plot(pop_exposed_1)
+hotOR_pop_df<-as.data.frame(pop_exposed_1,xy=T) 
+names(hotOR_pop_df)<-c("x","y","hot")
+ggplot(hotOR_pop_df) +
+  geom_tile(aes(x = x, y = y, fill = factor(hot))) +
+  scale_fill_manual(values = c("0" = "grey", "1" = "#b71c1c")) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none"
+  )
+
+plot(cattle_exposed_1)
+hotOR_cattle_df<-as.data.frame(cattle_exposed_1,xy=T) 
+names(hotOR_cattle_df)<-c("x","y","hot")
+ggplot(hotOR_cattle_df) +
+  geom_tile(aes(x = x, y = y, fill = factor(hot))) +
+  scale_fill_manual(values = c("0" = "grey", "1" = "#f58a2c")) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none"
+  )
+
+plot(poul_exposed_1)
+hotOR_poul_df<-as.data.frame(poul_exposed_1,xy=T) 
+names(hotOR_poul_df)<-c("x","y","hot")
+ggplot(hotOR_poul_df) +
+  geom_tile(aes(x = x, y = y, fill = factor(hot))) +
+  scale_fill_manual(values = c("0" = "grey", "1" = "yellow")) +
+  geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
+  labs(x = NULL, y = NULL,) +
+  #theme_minimal()+
+  theme_bw()+
+  theme(
+    legend.position="none"
+  )
+
+#2.暴露数量-----------
+#e :  Continent (population)
+Continent_vect<- vect ("/root/autodl-tmp/worldBorder/continentNew.shp") |> dplyr::filter(CONTINENT != "Antarctica")
+ContinentRaster <- rasterize(Continent_vect,Entropy,field='CONTINENT')
+
+Numpop_pop <- pop_exposed_1*popd2015; plot(Numpop_pop)
+Numpoul_poul <- poul_exposed_1*poul2015; plot(Numpoul_poul)
+Numcattle_cattle <- cattle_exposed_1*cattle2015 ; plot(Numcattle_cattle)
+
+
+AllhotOR_df <-c(Entropy,Numpop_pop,Numpoul_poul,Numcattle_cattle,ContinentRaster) %>% terra::as.data.frame() %>%na.omit()
+head(AllhotOR_df)
+names(AllhotOR_df)<-c("entr","Numpop_pop","Numcattle_cattle","Numpoul_poul","continent")
+
+NumhotOR_result <- AllhotOR_df %>%
+  group_by(continent) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+NumhotOR_result
+#fwrite(NumhotOR_result,'/root/autodl-tmp/humPoulResult/data/Hot_data/hotOR_Num_result.csv')
+
+
+#g : Country (poulation)
+Numpop_pop <- pop_exposed_1*popd2015; plot(Numpop_pop)
+Numpoul_poul <- poul_exposed_1*poul2015; plot(Numpoul_poul)
+Numcattle_cattle <- cattle_exposed_1*cattle2015 ; plot(Numcattle_cattle)
+
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+cRaster <- rasterize(globalSHP2,Entropy,field='name_ec')
+
+All_df <-c(Entropy,Numpop_pop,Numcattle_cattle,Numpoul_poul,cRaster) %>% terra::as.data.frame() %>%na.omit()
+head(All_df)
+names(All_df) <- c("entr","Numpop_pop","Numcattle_cattle","Numpoul_poul","country")
+Num_result <- All_df %>%
+  group_by(country) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+Num_result
+#fwrite(Num_result,'/root/autodl-tmp/humPoulResult/data/Hot_data/Numcat_result.csv')
 
 
 #——————————————————————————————————————————————————————————-----------------
@@ -1288,7 +1478,7 @@ speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_mo
 spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
 speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
-#Fig4 Mantel test------------
+
 #计算分功能群活动熵###############
 
 
@@ -1894,6 +2084,20 @@ ggplot(AEfunc_sum_df) +
 
 
 
+#——————————————————————————————————————————————————————————-----------------
+basePath<-"/root/autodl-tmp/humPoulResult/data/"
+
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+coast <- ne_coastline(scale = "small", returnclass = "sf")
+crs <- '+proj=longlat +datum=WGS84'
+allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
+speciesPixelNumPath <- list.files('/root/autodl-tmp/humPoulResult/data/single_model',pattern = '.tif',full.names = T)
+spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
+speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
+
+#Fig4 Mantel test------------
 
 
 
@@ -3587,6 +3791,58 @@ ggsave("/root/autodl-tmp/zyresult/Entropy/poppulresult/piedata_US.png", p, bg = 
 
 
 #b ： 弦图############
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |>filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+coast <- ne_coastline(scale = "small", returnclass = "sf")
+crs <- '+proj=longlat +datum=WGS84'
+
+#2.总功能群活动熵数据
+listFunc<-list.files('/root/autodl-tmp/humPoulResult/data/Mantel_data/birdFuncAE',full.names = T)
+AE_Func<-rast(listFunc)%>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+pop_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/pop_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+poul_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/poul_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+cattle_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/cattle_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+
+pop<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+poul<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+cattle<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif")%>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+
+
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Con_5Raster <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_ec')
+
+Global_birdEntropy_df <- c(AE_Func,pop_log,poul_log,cattle_log,pop,poul,cattle,Con_5Raster) %>% as.data.frame(.,xy=T)
+
+names(Global_birdEntropy_df) <- c('x','y','Large wading birds','Others','Seabirds','Shorebirds','Waterfowls','pop_log','poul_log','cattle_log','pop','poul','cattle',"Country")
+Global_birdEntropy_df <- Global_birdEntropy_df%>%
+  dplyr::select('x','y','Seabirds','Shorebirds','Waterfowls','Large wading birds','Others','pop_log','poul_log','cattle_log','pop','poul','cattle',"Country")
+summary(Global_birdEntropy_df)
+#fwrite(Global_birdEntropy_df,'/root/autodl-tmp/zyresult/Global_birdEntropy_df.csv')
+
+
+#宿主功能群
+listFuncCH<-list.files('/root/autodl-tmp/humPoulResult/data/AE_data',pattern = 'CH.tif',full.names = T)
+AE_FuncCH<-rast(listFuncCH)%>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+pop_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/pop_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+poul_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/poul_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+cattle_log<-rast("/root/autodl-tmp/humPoulResult/data/Mantel_data/corData/cattle_log.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+
+pop<-rast("/root/autodl-tmp/全球人口/GWP_v4/popd2015_30.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+poul<-rast("/root/autodl-tmp/zyresult/Poultry_duckchic.tif") %>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+cattle<-rast("/root/autodl-tmp/全球家禽/Cattle/5_Ct_2015_Da.tif")%>% resample(globalRaster)%>% mask(globalCountry) %>% crop(ext(globalRaster))
+
+globalSHP <- vect('/root/autodl-tmp/zyresult/Con_popentrpoul_sf_EU.shp')
+globalSHP2 <- terra::aggregate(globalSHP,'name_ec')
+Con_5Raster <- subset(globalSHP2, globalSHP2$name_ec %in% c("China", "India", "European Country", "Nigeria", "United States"))%>% rasterize(.,globalRaster,field='name_ec')
+
+Global_CHEntropy_df <- c(AE_FuncCH,pop_log,poul_log,cattle_log,pop,poul,cattle,Con_5Raster) %>% as.data.frame(.,xy=T)
+
+names(Global_CHEntropy_df) <- c('x','y','Large wading birds','Others','Seabirds','Shorebirds','Waterfowls','pop_log','poul_log','cattle_log','pop','poul','cattle',"Country")
+Global_CHEntropy_df <- Global_CHEntropy_df%>%
+  dplyr::select('x','y','Seabirds','Shorebirds','Waterfowls','Large wading birds','Others','pop_log','poul_log','cattle_log','pop','poul','cattle',"Country")
+summary(Global_CHEntropy_df)
 
 ######1.全部 -----------
 Global_birdEntropy_dfna<-Global_birdEntropy_df %>% na.omit()
@@ -3622,7 +3878,7 @@ ggplot(Global_birdEntropy_dfna) +
   labs(x = NULL, y = NULL) +
   theme_bw() +
   theme(
-    legend.position = "right",  # 显示图例
+    legend.position = "none",  # 显示图例
     legend.text = element_text(size= 12),
     axis.text = element_text(size = 12),
     panel.grid.major = element_blank()
@@ -3714,6 +3970,40 @@ Global_CHEntropy_dfna <- Global_CHEntropy_dfna %>%
     Guide == `Large wading birds` ~ "Large wading birds",
     Guide == Others ~ "Others"
   ))
+
+
+
+#空间图
+Global_CHEntropy_dfna$Guide<-factor(Global_CHEntropy_dfna$Guide)
+custom_colors <- c("Seabirds" = "#377EB8", "Shorebirds" = "#E41A1C", "Waterfowls" = "#4DAF4A", 
+                   "Large wading birds" = "#984EA3", "Others" = "#f7a156")
+labels <- c("Seabirds" = "Seabirds", 
+            "Shorebirds" = "Shorebirds", 
+            "Waterfowls" = "Waterfowls", 
+            "Large wading birds" = "Large wading birds", 
+            "Others" = "Others")
+ggplot(Global_CHEntropy_dfna) +
+  geom_tile(aes(x = x, y = y, fill = Guide)) +
+  scale_fill_manual(values = custom_colors, 
+                    na.value = "lightgrey",  # 设置NA值为灰色
+                    breaks = names(custom_colors),  # 保留特定的颜色映射
+                    labels = labels) +  # 添加标签
+  geom_spatvector(data = coast, fill = NA) +
+  coord_sf(crs = crs, xlim = c(-160, 165), ylim = c(-56, 90)) +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    legend.position = "none",  # 显示图例
+    legend.text = element_text(size= 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_blank()
+  )
+
+
+
+
+
+
 
 # 统计每个国家的Guide类别的像元数量
 country_guide_count <- Global_CHEntropy_dfna %>%
