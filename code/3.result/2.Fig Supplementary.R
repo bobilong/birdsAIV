@@ -839,7 +839,7 @@ plot(dfroc1,col="red",
      cex.lab=1.5)
 
 
-#a##########
+
 threshold <- dfroc1$auc
 
 WAE<- rast(paste0(basePath,'AE_data/AE.tif'))%>% mask(globalCountry)

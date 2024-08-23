@@ -55,11 +55,16 @@ crs <- '+proj=longlat +datum=WGS84'
 # #allMonth <- sum(combined_raster,na.rm=T)%>% mask(globalCountry)
 
 
-allDf <- fread(paste0(basePath,'allDf786_reclass.csv'))
+allDf <- fread('/root/autodl-tmp/propertyData/allDf786_reclass.csv')
 speciesPixelNumPath <- list.files('/root/autodl-tmp/SDMsingle',pattern = '.tif',full.names = T)
 spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
 speciesPixelNumPath2 <- speciesPixelNumPath[spName%in%allDf$LatName]
 length(speciesPixelNumPath2)
+
+
+`%notin%` <- Negate(`%in%`)
+speciesPixelNumPath3 <- allDf[LatName%notin%spName]
+length(speciesPixelNumPath3)
 
 #######1.Cumulative species months#########
 speciesPixelNum2 <- rast(speciesPixelNumPath2)
@@ -79,8 +84,8 @@ calEntropy <- rast(calEntropy)
 #calEntropy <- clamp(calEntropy, lower=0)# 将所有小于0的值设置为0: AE0619先给分熵的负值赋予0
 AE<-sum(calEntropy,na.rm = T)%>% mask(globalCountry); plot(AE)
 #AE0620 <- clamp(AE, lower=0)# 将所有小于0的值设置为0: AE0620先给分熵的负值赋予0
-AE0620<-AE
-plot(AE0620)
+#AE0620<-AE
+#plot(AE0620)
 #writeRaster(AE, '/root/autodl-tmp/result2/AE0619.tif', overwrite=T)
 #writeRaster(AE0620, '/root/autodl-tmp/result2/AE0620.tif', overwrite=T)
 
