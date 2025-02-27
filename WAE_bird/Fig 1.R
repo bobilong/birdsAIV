@@ -22,6 +22,43 @@ speciesPixelNumPath <- list.files('/root/autodl-tmp/root/autodl-tmp/WAEdata_new_
 spName <- basename(speciesPixelNumPath) %>% str_sub(.,1,-5)                      
 speciesPixelNumPath5 <- speciesPixelNumPath[spName%in%allDf$LatName]
 
+#########AE calculation###############
+
+####### species richness----------
+spNum <- lapply(speciesPixelNumPath5, function(x){
+  r <- rast(x) %>% sum(.,na.rm=T)
+  r2 <- ifel(r>0,1,NA)
+  names(r2) <- str_sub(basename(x),1,-5)
+  return(r2)
+})
+spNum <- rast(spNum)
+spNumTif <- sum(spNum,na.rm=T) %>% mask(globalCountry)
+
+plot(spNumTif)
+#writeRaster(spNumTif, paste0('/root/autodl-tmp/root/autodl-tmp/WAEdata_new_y/result/spNumTif.tif'), overwrite = TRUE)
+spNumTif <- rast('/root/autodl-tmp/root/autodl-tmp/WAEdata_new_y/result/spNumTif.tif')
+
+#######1.Cumulative species months#########
+speciesPixelNum2 <- rast(speciesPixelNumPath5)
+allMonth <- sum(speciesPixelNum2,na.rm=T)%>% mask(globalCountry)
+writeRaster(allMonth, paste0('/root/autodl-tmp/root/autodl-tmp/WAEdata_new_y/result/allMonth.tif'), overwrite = TRUE)
+#writeRaster(allMonth,paste0(basePath,'allMonth.tif'), overwrite=T)
+
+#######2.AE##########l;
+#allMonth <- rast(paste0(basePath,'AE_data/allMonth.tif'))
+calEntropy <- lapply(speciesPixelNumPath5, function(x){
+  r <- rast(x) %>% sum(.,na.rm=T)
+  pi <- r/allMonth
+  y <- -pi*log(pi)
+  names(y) <- str_sub(basename(x),1,-5)
+  return(y)
+})
+calEntropy <- rast(calEntropy)
+AE<-sum(calEntropy,na.rm = T)%>% mask(globalCountry)
+plot(AE)
+writeRaster(AE, paste0('/root/autodl-tmp/root/autodl-tmp/WAEdata_new_y/result/WAE.tif'), overwrite = TRUE)
+#writeRaster(AE,paste0(basePath,'result/WAE.tif'), overwrite=T)
+
 
 
 
