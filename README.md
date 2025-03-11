@@ -1,4 +1,4 @@
-# GBIF Data Processing and Species Distribution Modeling (SDM)
+# GBIF Data Processing and Monthly Species Distribution Modeling (SDM)
 
 ## Overview
 This repository contains scripts for processing GBIF (Global Biodiversity Information Facility) data, performing species distribution modeling (SDM), and analyzing ecological patterns. The workflow includes data cleaning, spatial filtering, model training/validation, and visualization. Key steps include:
