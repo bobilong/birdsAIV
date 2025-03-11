@@ -24,7 +24,7 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - **GBIF Data**: CSV files stored in `[https://figshare.com/articles/dataset/_b_Enhancing_Global_Avian_Influenza_Exposure_Risk_Assessment_with_Waterbird_Activity_Entropy_b_/28504868]`.
 - **IUCN Boundaries**: Shapefiles in `[/root/autodl-tmp/IUCN_Data/](https://datazone.birdlife.org/species/requestdis]`.
 - **Environmental Layers**: 
-  - Climate data (e.g., BIO variables from WorldClim).
+  - Climate data (e.g., monthly climate variables from WorldClim).
   - Water percentage:`https://land.copernicus.eu/en`.
   - Human/poultry/cattle density rasters:`https://data.apps.fao.org/catalog/iso/15f8c56c-5499-45d5-bd89-59ef6c026704`.
 - **Validation Data**: Outbreak records (e.g., avian influenza cases,`https://empres-i.apps.fao.org/`).
