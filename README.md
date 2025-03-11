@@ -5,7 +5,7 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - **Data Preprocessing**: Filtering species records and removing outliers.
 - **Spatial Analysis**: Aligning data with IUCN boundaries and environmental variables.
 - **Modeling**: Training machine learning models (e.g., Random Forest, XGBoost) for SDM.
-- **Validation**: Evaluating model performance using AUC-ROC and activity entropy (AE).
+- **Validation**: Evaluating model performance using AUC-ROC and waterbird activity entropy (WAE).
 - **Visualization**: Generating maps for species richness, AE, and risk hotspots.
 
 ---
@@ -26,7 +26,7 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - **Environmental Layers**: 
   - Climate data (e.g., BIO variables from WorldClim).
   - Water percentage:`https://land.copernicus.eu/en`.
-  - Human/poultry density rasters:`https://data.apps.fao.org/catalog/iso/15f8c56c-5499-45d5-bd89-59ef6c026704`.
+  - Human/poultry/cattle density rasters:`https://data.apps.fao.org/catalog/iso/15f8c56c-5499-45d5-bd89-59ef6c026704`.
 - **Validation Data**: Outbreak records (e.g., avian influenza cases,`https://empres-i.apps.fao.org/`).
 
 ---
@@ -49,11 +49,11 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 
 ### 3. Validation
 - **AUC-ROC**: Evaluate model discrimination ability.
-- **Activity Entropy (AE)**: Quantify spatiotemporal aggregation of species records.
+- **Waterbird Activity Entropy (WAE)**: Quantify spatiotemporal aggregation of species records.
 - **Hotspot Analysis**: Identify high-risk regions using AE thresholds and environmental covariates.
 
 ### 4. Visualization
-- **Maps**: Species richness, AE, and risk hotspots.
+- **Maps**: Species richness, WAE, and risk hotspots.
 - **Statistical Plots**: Boxplots for model comparisons, ROC curves, and Mantel tests for correlation analysis.
 
 
@@ -70,7 +70,7 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 
 3. **Outputs**:
    - Model predictions.
-   - Validation metrics (AUC scores, AE maps).
+   - Validation metrics (AUC scores, WAE maps).
    - Figures (PDF/PNG) for ecological patterns and risk hotspots.
 
 ---
