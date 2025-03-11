@@ -21,12 +21,13 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - `elapid`, `sklearn`, `xgboost`, `lightgbm`, `geopandas`
 
 ### External Data
-- **GBIF Data**: CSV files stored in `/root/autodl-tmp/GBIF_Data/`.
-- **IUCN Boundaries**: Shapefiles in `/root/autodl-tmp/IUCN_Data/`.
+- **GBIF Data**: CSV files stored in `[https://figshare.com/articles/dataset/_b_Enhancing_Global_Avian_Influenza_Exposure_Risk_Assessment_with_Waterbird_Activity_Entropy_b_/28504868]`.
+- **IUCN Boundaries**: Shapefiles in `[/root/autodl-tmp/IUCN_Data/](https://datazone.birdlife.org/species/requestdis]`.
 - **Environmental Layers**: 
   - Climate data (e.g., BIO variables from WorldClim).
-  - Elevation, water percentage, and human/poultry density rasters.
-- **Validation Data**: Outbreak records (e.g., avian influenza cases).
+  - Water percentage:`https://land.copernicus.eu/en`.
+  - Human/poultry density rasters:`https://data.apps.fao.org/catalog/iso/15f8c56c-5499-45d5-bd89-59ef6c026704`.
+- **Validation Data**: Outbreak records (e.g., avian influenza cases,`https://empres-i.apps.fao.org/`).
 
 ---
 
@@ -55,6 +56,29 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - **Maps**: Species richness, AE, and risk hotspots.
 - **Statistical Plots**: Boxplots for model comparisons, ROC curves, and Mantel tests for correlation analysis.
 
+
 ---
 
-## File Structure
+## Usage
+1. **Environment Setup**:
+   - Install required R/Python packages.
+   - Update file paths in the code (e.g., `/root/autodl-tmp/` to your local paths).
+
+2. **Run Workflow**:
+   - Execute R sections for data preprocessing, modeling, and visualization.
+   - Run Python blocks for SDM simulations (ensure `pyimpute` and `sklearnex` are installed).
+
+3. **Outputs**:
+   - Model predictions.
+   - Validation metrics (AUC scores, AE maps).
+   - Figures (PDF/PNG) for ecological patterns and risk hotspots.
+
+---
+
+## Notes
+- **Data Paths**: Modify hardcoded paths (e.g., `/root/autodl-tmp/`) to match your local environment.
+- **Parallelization**: Use `n_jobs=-1` in Python sections for multi-core processing.
+- **Citation**: Ensure proper attribution for GBIF, IUCN, and WorldClim data sources.
+
+
+
