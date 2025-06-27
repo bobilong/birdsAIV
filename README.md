@@ -1,10 +1,12 @@
-# GBIF Data Processing and Monthly Species Distribution Modeling (SDM)
+# GBIF Data Processing and Monthly Species Distribution Modeling (SDMs)
+
+The final vertion is in file 'WAE_bird'
 
 ## Overview
-This repository contains scripts for processing GBIF (Global Biodiversity Information Facility) data, performing species distribution modeling (SDM), and analyzing ecological patterns. The workflow includes data cleaning, spatial filtering, model training/validation, and visualization. Key steps include:
+This repository contains scripts for processing GBIF (Global Biodiversity Information Facility) data, performing species distribution modeling (SDMs), and analyzing ecological patterns. The workflow includes data cleaning, spatial filtering, model training/validation, and visualization. Key steps include:
 - **Data Preprocessing**: Filtering species records and removing outliers.
 - **Spatial Analysis**: Aligning data with IUCN boundaries and environmental variables.
-- **Modeling**: Training machine learning models (e.g., Random Forest, XGBoost) for SDM.
+- **Modeling**: Training machine learning models (e.g., Random Forest, XGBoost) for SDMs.
 - **Validation**: Evaluating model performance using AUC-ROC and waterbird activity entropy (WAE).
 - **Visualization**: Generating maps for species richness, AE, and risk hotspots.
 
@@ -17,12 +19,11 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 - `vegan`, `linkET` (for Mantel tests)
 - Full list in `library()` calls in the code.
 
-### Python Libraries (for SDM simulation)
-- `elapid`, `sklearn`, `xgboost`, `lightgbm`, `geopandas`
 
 ### External Data
 - **GBIF Data**: CSV files stored in `[https://figshare.com/articles/dataset/_b_Enhancing_Global_Avian_Influenza_Exposure_Risk_Assessment_with_Waterbird_Activity_Entropy_b_/28504868]`.
 - **IUCN Boundaries**: Shapefiles in `[/root/autodl-tmp/IUCN_Data/](https://datazone.birdlife.org/species/requestdis]`.
+- **
 - **Environmental Layers**: 
   - Climate data (e.g., monthly climate variables from WorldClim).
   - Water percentage:`https://land.copernicus.eu/en`.
