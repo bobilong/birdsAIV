@@ -1,6 +1,6 @@
 # GBIF Data Processing and Monthly Species Distribution Modeling (SDMs)
 
-The final vertion is in file 'WAE_bird'
+The updated vertion is file 'Code of WAE (Version 202507).R'
 
 ## Overview
 This repository contains scripts for processing GBIF (Global Biodiversity Information Facility) data, performing species distribution modeling (SDMs), and analyzing ecological patterns. The workflow includes data cleaning, spatial filtering, model training/validation, and visualization. Key steps include:
