@@ -1,15 +1,16 @@
-# GBIF Data Processing and Monthly Species Distribution Modeling (SDMs)
+# Global Avian Influenza Risk: Waterbird entropy for targeted surveillance
 
 The updated vertion is file 'Code of WAE (Version 202507).R'
 
 ## Overview
-This repository contains scripts for processing GBIF (Global Biodiversity Information Facility) data, performing species distribution modeling (SDMs), and analyzing ecological patterns. The workflow includes data cleaning, spatial filtering, model training/validation, and visualization. Key steps include:
-- **Data Preprocessing**: Filtering species records and removing outliers.
-- **Spatial Analysis**: Aligning data with IUCN boundaries and environmental variables.
-- **Modeling**: Training machine learning models (e.g., Random Forest, XGBoost) for SDMs.
-- **Validation**: Evaluating model performance using AUC-ROC and waterbird activity entropy (WAE).
-- **Visualization**: Generating maps for species richness, AE, and risk hotspots.
-
+This repository presents a spatial modeling framework that evaluates the ecological drivers and predictive performance of Waterbird Activity Entropy (WAE) as a proxy for avian influenza virus (AIV) outbreak risk. Leveraging species distribution models (SDMs), global surveillance data, and human/cattle/poultry density, the project quantifies transmission potential across different regions/countries and functional bird groups.
+- **1.SDMs modeling**: 
+- **2.SDMs validation**: 
+- **3.Statistic for Main Figures**: 
+- ***(1)Waterbird activity entropy (WAE) calculations**: 
+- ***(2)Performance of WAE for predicting reported cases of AIV**: 
+- ***(3)Hotspot identification**:
+- ***(4)Dominant waterbird functional groups identification**:
 ---
 
 ## Requirements
@@ -23,18 +24,18 @@ This repository contains scripts for processing GBIF (Global Biodiversity Inform
 ### External Data
 - **GBIF Data**: CSV files stored in `[https://figshare.com/articles/dataset/_b_Enhancing_Global_Avian_Influenza_Exposure_Risk_Assessment_with_Waterbird_Activity_Entropy_b_/28504868]`.
 - **IUCN Boundaries**: Shapefiles in `[/root/autodl-tmp/IUCN_Data/](https://datazone.birdlife.org/species/requestdis]`.
-- **
+- **BirdLife data zone**: BirdLife (https://datazone.birdlife.org/species/requestdis)
 - **Environmental Layers**: 
   - Climate data (e.g., monthly climate variables from WorldClim).
   - Water percentage:`https://land.copernicus.eu/en`.
   - Human/poultry/cattle density rasters:`https://data.apps.fao.org/catalog/iso/15f8c56c-5499-45d5-bd89-59ef6c026704`.
-- **Validation Data**: Outbreak records (e.g., avian influenza cases,`https://empres-i.apps.fao.org/`).
+- **AIVs Data**: Outbreak records (e.g., avian influenza cases,`https://empres-i.apps.fao.org/`).
 
 ---
 
 ## Workflow
-### 1. Data Preparation
-- **Input**: GBIF CSV files, IUCN boundaries, climate rasters.
+### 1. Species Distribution Modeling (SDMs)
+- **Input**: GBIF CSV files, IUCN boundaries, Environmental rasters.
 - **Steps**:
   - Filter records by observation type (`HUMAN_OBSERVATION`, `MACHINE_OBSERVATION`).
   - Remove species with fewer than 108 records.
