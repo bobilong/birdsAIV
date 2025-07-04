@@ -19,7 +19,7 @@ globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin
 coast <- rnaturalearth::ne_coastline(scale = "small", returnclass = "sf")
 
 
-#####1.SDMs modeling##########
+#####1.SDMs Construction##########
 #using thin data and water percentage
 climPath <- list.files('/root/climateResample/',full.names = T)
 thinData <- list.files('/root/monthThinContainData/',full.names = T)
@@ -100,7 +100,7 @@ for (path in thinData) {
 }
 
 
-#####2.SDMs validation##########
+#####2.SDMs Validation##########
 #TSS
 model_dir <- "/root/autodl-tmp/WAEdata_new_y/SDMs"
 # output_dir <- "/root/result"
@@ -147,8 +147,8 @@ cat("Mean Calibration：", round(mean_calib, 3), "\n")
 
 
 
-#####3.Statistic for Main Figures##########
-######(1) Waterbird activity entropy (WAE) calculations###########
+#####3.Statistical Framework for Core Figures##########
+######(1) Waterbird activity entropy (WAE) raster generation###########
 speciesPixelNumPath2 <- list.files('/root/singleRast_779',pattern = '.tif',full.names = T)
 
 #Species Richness calculation
@@ -206,9 +206,9 @@ pspNum <- ggplot() +
     legend.title = element_blank(),
     #legend.title = element_text(hjust=0.5),
     legend.title.align = -10,
-    legend.position = 'bottom',#设置图例与主图距离
-    legend.direction='horizontal',#图例水平放置vertical，垂直horizontal，
-    legend.key.width = unit(1.15,'cm'), #图例宽度
+    legend.position = 'bottom',#
+    legend.direction='horizontal',#
+    legend.key.width = unit(1.15,'cm'), #
     legend.key.height = unit(0.3,'cm')
   )
 pspNum
@@ -224,14 +224,14 @@ pSRCV<-ggplot() +
     axis.text = element_text(size=12),
     plot.title = element_text(hjust=0.5),
     # axis.line = element_line(color = 'black'),
-    # panel.background = element_rect(fill = "white"),#背景设置
+    # panel.background = element_rect(fill = "white"),#
     #legend.direction = "horizontal",
     legend.title = element_blank(),
     #legend.title = element_text(hjust=0.5),
     legend.title.align = -10,
-    legend.position = c(0.15, 0.05),#设置图例与主图距离
-    legend.direction='horizontal',#图例水平放置vertical，垂直horizontal，
-    legend.key.width = unit(1.2,'cm'), #图例宽度
+    legend.position = c(0.15, 0.05),#
+    legend.direction='horizontal',#
+    legend.key.width = unit(1.2,'cm'), #
     legend.key.height = unit(0.3,'cm')
     
   )
@@ -344,7 +344,7 @@ pAE2
 
 pAE+pAE2
 
-######(2) Performance of WAE for predicting reported cases of AIV ###########
+######(2) AIV cases prediction performance ###########
 
 # Multi-criteria Filtering Process for Restricting Poultry-to-Poultry Transmission Cases (Supplementary Fig. 7)
 ### result 1 (raw data)
@@ -695,7 +695,7 @@ p1+p2
 result_st2 <- fread('/root/result/Serotype_edit.csv')
 ggplot(data = result_st2, aes(x = label, y = recall, fill = label)) +
   geom_col(position = 'dodge2') +
-  theme_bw() +  # 使用黑白主题作为基础
+  theme_bw() +  # 
   labs( y = "Sensitivity") +  
   scale_fill_brewer(palette = "Pastel1") +
   ylim(c(0, 0.9))+
@@ -888,7 +888,7 @@ ggplot(hotentrpoppoulcat_df) +
   labs(x = NULL, y = NULL) +
   theme_bw() +
   theme(
-    legend.position = "none",  # 显示图例
+    legend.position = "none",  # 
     legend.text = element_text(size= 12),
     axis.text = element_text(size = 12),
     panel.grid.major = element_blank()
@@ -898,7 +898,7 @@ ggplot(hotentrpoppoulcat_df) +
 #plot in excel
 
 
-######(4) Dominant waterbird functional groups ###########
+######(4) Functional group prioritization and correlation analysis ###########
 speciesPixelNumPath2 <- list.files('/root/singleRast_779',pattern = '.tif',full.names = T)
 
 # WAE of different waterbird functional groups (Comfirmed Host)
@@ -1073,7 +1073,7 @@ for(con in Contry5c){#
           }
           model_summary <- summary(model)
           
-          # 提取所需的参数
+          #
           b <- model_summary$coefficients[2, 1]
           SE <- model_summary$coefficients[2, 2]
           b_SE <- sprintf("%.2f ± %.2f", b, SE)
@@ -1167,7 +1167,7 @@ ggplot() +
   geom_sf(data = world.map, fill = "lightgrey", color = NA) + 
   geom_sf(data = Con_Africa, fill = "#baa1a1", color = NA) +    #
   coord_sf(crs = crs, xlim = c(-65, 60), ylim = c(-50, 50)) +
-  theme_bw() + # 使用简洁主题
+  theme_bw() + #
   theme(legend.position = "none",
         axis.text = element_text(size=12),
         panel.grid.major = element_blank() )
