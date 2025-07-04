@@ -7,10 +7,10 @@ This repository presents a spatial modeling framework that evaluates the ecologi
 - **1.SDMs Construction**: Monthly niche modeling with occurrence and environment data
 - **2.SDMs Validation**: Evaluation using True Skill Statistic (TSS)
 - **3.Statistical Framework for Core Figures**: 
-  -**(1)Waterbird activity entropy (WAE) raster generation**
-  -**(2)AIV cases prediction performance**
-  -**(3)Hotspot identification**
-  -**(4)Functional group prioritization and correlation analysis**
+  - **(1)Waterbird activity entropy (WAE) raster generation**
+  - **(2)AIV cases prediction performance**
+  - **(3)Hotspot identification**
+  - **(4)Functional group prioritization and correlation analysis**
 ---
 
 ## Requirements
@@ -51,7 +51,7 @@ This repository presents a spatial modeling framework that evaluates the ecologi
 - **Species richness and CV calculation**: Richness and variability assessed via species CV and latitudinal shifts
 - **Visualazion**: Spatial patterns visualized in Figure 1a–1b
 - *Output*: spNumTif.tif, sp_cv.tif, WAE.tif Fig.1a, Fig.1b
-- 
+
 #### (2) AIV cases prediction performance
 - **AIVs reports Filtering**: Filters outbreaks to exclude poultry–poultry transmission
 - **AUC-ROC**: ROC curves assess entropy's predictive power (AUC ≥ 0.8)
