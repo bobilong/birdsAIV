@@ -994,7 +994,7 @@ fwrite(Global_birdEntropy_df,'/root/result/Global_birdEntropy_df.csv')
 
 
 
-#Person r
+#Pearson r
 Contry5c <- c("China", "India", "EU", "United States")
 
 Global_birdEntropy_df5_long <- gather(Global_birdEntropy_df, key = "Variable", value = "Value",
