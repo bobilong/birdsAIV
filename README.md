@@ -1,23 +1,22 @@
 # Global Avian Influenza Risk: Waterbird entropy for targeted surveillance
 
-The updated vertion is file 'Code of WAE (Version 202507).R'
+**Version**: Code of WAE (Version 202507).R 
 
 ## Overview
 This repository presents a spatial modeling framework that evaluates the ecological drivers and predictive performance of Waterbird Activity Entropy (WAE) as a proxy for avian influenza virus (AIV) outbreak risk. Leveraging species distribution models (SDMs), global surveillance data, and human/cattle/poultry density, the project quantifies transmission potential across different regions/countries and functional bird groups.
-- **1.SDMs modeling**: Constructs monthly niche models using filtered occurrence data and climate layers
-- **2.SDMs validation**: Validation via True Skill Statistic (TSS)
-- **3.Statistic for Main Figures**: 
-  -**(1)Waterbird activity entropy (WAE) calculations**
-  -**(2)Performance of WAE for predicting reported cases of AIV**
+- **1.SDMs Construction**: Monthly niche modeling with occurrence and environment data
+- **2.SDMs Validation**: Evaluation using True Skill Statistic (TSS)
+- **3.Statistical Framework for Core Figures**: 
+  -**(1)Waterbird activity entropy (WAE) raster generation**
+  -**(2)AIV cases prediction performance**
   -**(3)Hotspot identification**
-  -**(4)Dominant waterbird functional groups identification**
+  -**(4)Functional group prioritization and correlation analysis**
 ---
 
 ## Requirements
 ### R Libraries
 - `data.table`, `terra`, `tidyterra`, `stringr`
 - `ggplot2`, `dplyr`, `rnaturalearth`, `paletteer`
-- `vegan`, `linkET` (for Mantel tests)
 - Full list in `library()` calls in the code.
 
 
@@ -34,50 +33,45 @@ This repository presents a spatial modeling framework that evaluates the ecologi
 ---
 
 ## Workflow
-### 1. SDMs modeling
-- **Input**: Monthly Climate variables (temperature, precipitation), elevation, water percentage.
+### 1. Species Distribution Modeling
+- **Input**: Filtered monthly occurrences; Monthly Climate variables (temperature, precipitation), elevation, water percentage.
 - **Models**: random forest (RF), maximum entropy (Maxentropy), and eXtreme Gradient Boosting (XGBoost)
 - **Process**:
   - Sample background points for pseudo-absences.
   - Split data into training/testing sets.
   - Train models and save predictions (probability rasters).
 
-### 2. SDMs validation
-- **Process**: calibration scores .tif projections per species per month
+### 2. SDMs Validation
+- **Process**: Model calibration assessed via True Skill Statistic (TSS); Summary metrics compiled across species/months
+- *Output*: SDMs_TSS.csv
 
-### 3. Statistic for Main Figures
-#### (1) Waterbird activity entropy (WAE) calculations
+### 3. Statistical Framework for Core Figures
+#### (1) WAE raster generation
 - **WAE calculation**: Entropy calculated using Shannon index across monthly species presence
 - **Species richness and CV calculation**: Richness and variability assessed via species CV and latitudinal shifts
 - **Visualazion**: Spatial patterns visualized in Figure 1a–1b
 - *Output*: spNumTif.tif, sp_cv.tif, WAE.tif Fig.1a, Fig.1b
 - 
-#### (2) Predictive Performance of WAE
+#### (2) AIV cases prediction performance
 - **AIVs reports Filtering**: Filters outbreaks to exclude poultry–poultry transmission
 - **AUC-ROC**: ROC curves assess entropy's predictive power (AUC ≥ 0.8)
 - **Country-level statistic**: Country-level precision, recall, and F1 scores
 - **Serotype statistic**: Serotype-specific sensitivity analysis
 - *Output*: result_country.csv, Serotype_edit.csv Fig.2a–2d
 
-#### (3) Hotspot Identification
+#### (3) Hotspot identification
 - **Identification**: Identifies areas with co-occurrence of high-risk (using WAE thresholds) and high-density of human/cattle/poultry
 - **Classification**: Categorical raster assigns composite hotspot typologies
 - **Regional Statistic**: Regional summaries across regions/countries
 - *Output*: hotentrpoppoulcat.tif, hot_statistic.csv, country_hot.csv Fig.3a, Fig.3b
 
 #### (4) Functional Group Analysis
-- **Activoty Entropy calculation**: Entropy calculated separately for bird functional groups (Waterfowl, Shorebirds, Seabirds, Waders, Others) and Two host definitions (Confirmed, All Suspected)
-- **Person correlation**: Results correlated with human/cattle/poultry density using Person r
-- **Person correlation**: Results correlated with human/cattle/poultry density using Person r
-- 
-- 
-- **Hotspot Analysis**: Identify high-risk regions using AE thresholds and environmental covariates.
+- **Activoty Entropy calculation**: Entropy calculated separately for bird functional groups (Waterfowl, Shorebirds, Seabirds, Waders, Others) and Two host definitions (Confirmed Hosts, All Suspected Hosts)
+- **Person correlation**: - WAE vs. human/cattle/poultry densities (among key exposure regions/countries)
+- **Spatial autocorrelation**: Bivariate Moran’s I evaluates spatial autocorrelation (among key exposure regions/countries)
+- *Output*: Global_CHEntropy_df.csv, Global_birdEntropy_df.csv All5_poppoulcatresults_df.csv, Moran_Func.csv
 
-### 4. Visualization
-- **Maps**: Species richness, WAE, and risk hotspots.
-- **Statistical Plots**: Boxplots for model comparisons, ROC curves, and Mantel tests for correlation analysis.
-
-
+  
 ---
 
 ## Usage
