@@ -69,7 +69,7 @@ This repository presents a spatial modeling framework that evaluates the ecologi
 - **Activoty Entropy calculation**: Entropy calculated separately for bird functional groups (Waterfowl, Shorebirds, Seabirds, Waders, Others) and Two host definitions (Confirmed Hosts, All Suspected Hosts)
 - **Pearson correlation**: - WAE vs. human/cattle/poultry densities (among key exposure regions/countries)
 - **Spatial autocorrelation**: Bivariate Moran’s I evaluates spatial autocorrelation (among key exposure regions/countries)
-- *Output*: Global_CHEntropy_df.csv, Global_birdEntropy_df.csv All5_poppoulcatresults_df.csv, Moran_Func.csv
+- *Output*: Global_CHEntropy_df.csv, Global_birdEntropy_df.csv,correlation_country_summary_CH.csv, correlation_country_summary_All.csv, Moran_Func.csv
 
   
 ---
