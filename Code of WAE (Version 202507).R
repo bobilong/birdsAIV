@@ -995,109 +995,117 @@ fwrite(Global_birdEntropy_df,'/root/result/Global_birdEntropy_df.csv')
 
 
 #Pearson r
-Contry5c <- c("China", "India", "EU", "United States")
+##Confirmed Host
+library(dplyr)
+library(tidyr)
+library(psych)
+library(broom)
 
-Global_birdEntropy_df5_long <- gather(Global_birdEntropy_df, key = "Variable", value = "Value",
-                                      -`x`,-`y`,-`pop_log`, -`poul_log`, -`cattle_log`,-`pop`, -`poul`, -`cattle`, -`Country`) %>%na.omit()
-Global_birdEntropy_df5_long <- subset(Global_birdEntropy_df5_long, Value>0)
-summary(Global_birdEntropy_df5_long)#ALL
+bird_groups <- c("Seabirds", "Shorebirds", "Waterfowl", "Large wading birds", "Others")
+predictors <- c("pop_log", "poul_log", "cattle_log")
+#predictors <- c("pop", "poul", "cattle")
+country_list <- c('United States', 'EU', 'China', 'India')
 
-Global_CHEntropy_df5_long <- gather(Global_CHEntropy_df, key = "Variable", value = "Value",
-                                    -`x`,-`y`,-`pop_log`, -`poul_log`, -`cattle_log`,-`pop`, -`poul`, -`cattle`, -`Country`) %>%na.omit()
-Global_CHEntropy_df5_long <- subset(Global_CHEntropy_df5_long, Value>0)
-summary(Global_CHEntropy_df5_long)#CH
-
-#
-All5_poppoulcatresults_df <- data.frame(Variable = character(),  b = numeric(),  SE = numeric(), b_SE = character(), z = numeric(),  P = numeric(),  R2 = numeric(), 
-                                        Country = character(), Type = character(), Part = character()  ,stringsAsFactors = FALSE)
-Contry5c <- c("China", "India", "EU", "United States")
-parts <- c('pop','poul','cattle')
-types <- c('All', 'CH')
-variables <- c('Seabirds', 'Shorebirds', 'Waterfowl', 'Large wading birds', 'Others')
-
-for(con in Contry5c){#
+results_list <- list()
+for (country in country_list) {
+  country_data <- Global_CHEntropy_df2 %>% dplyr::filter(Country == country)
   
-  for(typ in types){
-    if(typ == 'All'){#all
+  for (bird in bird_groups) {
+    for (pred in predictors) {
+      df_temp <- country_data %>%
+        select(all_of(c(bird, pred))) %>%
+        na.omit()
       
-      for(part in parts){#
+      n <- nrow(df_temp)
+      if (n >= 3) {  #  Pearson’s r
+        df <- n - 2
+        mean_bird <- mean(df_temp[[bird]])
+        sd_bird <- sd(df_temp[[bird]])
+        mean_pred <- mean(df_temp[[pred]])
+        sd_pred <- sd(df_temp[[pred]])
+        cor_test <- cor.test(df_temp[[bird]], df_temp[[pred]])
+        tidy_result <- tidy(cor_test)
         
-        for (var in variables) {#
-          
-          con_birdEntropy_df <- subset(Global_birdEntropy_df5_long,Global_birdEntropy_df5_long$Country==con)
-          vardata = subset(con_birdEntropy_df,con_birdEntropy_df$Variable==var)
-          
-          if(part =='pop'){#
-            model <- lm(`pop_log` ~ Value, vardata)
-          }
-          if(part =='poul'){#
-            model <- lm(`poul_log` ~ Value, vardata)
-          }
-          if(part =='cattle'){#cattle
-            model <- lm(`cattle_log` ~ Value, vardata)
-            
-          }
-          model_summary <- summary(model)
-          
-          b <- model_summary$coefficients[2, 1]
-          SE <- model_summary$coefficients[2, 2]
-          b_SE <- sprintf("%.2f ± %.2f", b, SE)
-          z <- b / SE
-          P <- model_summary$coefficients[2, 4]
-          R2 <- model_summary$r.squared
-         
-          All5_poppoulcatresults_df <- rbind(All5_poppoulcatresults_df, data.frame(Variable = var, b = b, SE = SE, b_SE = b_SE, z = z, P = P, R2 = R2, 
-                                                                                   Country = con, Type = typ, Part = part))
-        }
+        result <- data.frame(
+          Country = country,
+          Bird_Group = bird,
+          Predictor = pred,
+          Sample_Size = n,
+          Mean_Bird = round(mean_bird, 2),
+          SD_Bird = round(sd_bird, 2),
+          Mean_Predictor = round(mean_pred, 2),
+          SD_Predictor = round(sd_pred, 2),
+          r = round(tidy_result$estimate, 2),
+          CI_Lower = round(tidy_result$conf.low, 2),
+          CI_Upper = round(tidy_result$conf.high, 2),
+          t = round(tidy_result$statistic, 2),
+          df = df,
+          p_value = tidy_result$p.value,#format.pval(tidy_result$p.value, digits = 3),
+          Method = tidy_result$method
+        )
+        
+        results_list[[paste(country, bird, pred, sep = "_")]] <- result
       }
     }
-    
-    if(typ == 'CH'){#CH
+  }
+}
+                        
+correlation_country_summary_CH <- bind_rows(results_list)
+summary(correlation_country_summary_CH)
+correlation_country_summary_CH$`Type` <- 'CH'
+
+                        
+##All Suspected Host
+results_list <- list()
+for (country in country_list) {
+  country_data <- Global_birdEntropy_df2 %>% dplyr::filter(Country == country)
+  
+  for (bird in bird_groups) {
+    for (pred in predictors) {
+      df_temp <- country_data %>%
+        select(all_of(c(bird, pred))) %>%
+        na.omit()
       
-      for(part in parts){#
+      n <- nrow(df_temp)
+      if (n >= 3) {  # Pearson’s r
+        df <- n - 2
+        mean_bird <- mean(df_temp[[bird]])
+        sd_bird <- sd(df_temp[[bird]])
+        mean_pred <- mean(df_temp[[pred]])
+        sd_pred <- sd(df_temp[[pred]])
+        cor_test <- cor.test(df_temp[[bird]], df_temp[[pred]])
+        tidy_result <- tidy(cor_test)
         
-        for (var in variables) {#
-          
-          con_CHEntropy_df <- subset(Global_CHEntropy_df5_long,Global_CHEntropy_df5_long$Country==con)
-          vardata = subset(con_CHEntropy_df,con_CHEntropy_df$Variable==var)
-          
-          if(part =='pop'){#
-            model <- lm(`pop_log` ~ Value, vardata)
-          }
-          if(part =='poul'){#
-            model <- lm(`poul_log` ~ Value, vardata)
-          }
-          if(part =='cattle'){#cattle
-            model <- lm(`cattle_log` ~ Value, vardata)
-            
-          }
-          model_summary <- summary(model)
-          
-          #
-          b <- model_summary$coefficients[2, 1]
-          SE <- model_summary$coefficients[2, 2]
-          b_SE <- sprintf("%.2f ± %.2f", b, SE)
-          z <- b / SE
-          P <- model_summary$coefficients[2, 4]
-          R2 <- model_summary$r.squared
-          
-          All5_poppoulcatresults_df <- rbind(All5_poppoulcatresults_df, data.frame(Variable = var, b = b, SE = SE, b_SE = b_SE, z = z, P = P, R2 = R2, 
-                                                                                   Country = con, Type = typ, Part = part))
-        }
+        result <- data.frame(
+          Country = country,
+          Bird_Group = bird,
+          Predictor = pred,
+          Sample_Size = n,
+          Mean_Bird = round(mean_bird, 2),
+          SD_Bird = round(sd_bird, 2),
+          Mean_Predictor = round(mean_pred, 2),
+          SD_Predictor = round(sd_pred, 2),
+          r = round(tidy_result$estimate, 2),
+          CI_Lower = round(tidy_result$conf.low, 2),
+          CI_Upper = round(tidy_result$conf.high, 2),
+          t = round(tidy_result$statistic, 2),
+          df = df,
+          p_value = tidy_result$p.value,#format.pval(tidy_result$p.value, digits = 3),
+          Method = tidy_result$method
+        )
         
+        results_list[[paste(country, bird, pred, sep = "_")]] <- result
       }
-      
     }
-    
   }
 }
 
-All5_poppoulcatresults_df
-fwrite(All5_poppoulcatresults_df,'/root/result/All5_poppoulcatresults_df.csv')
-
-
-
-
+# 
+correlation_country_summary_All <- bind_rows(results_list)
+summary(correlation_country_summary_All)
+correlation_country_summary_All$`Type` <- 'All'
+                        
+                        
 #Moran's I
 FuncTypepath <- list.files('/root/autodl-tmp/WAEdata_new_y/result779/WAE_data/', full.names = T)
 countrys <- vect ('/root/autodl-tmp/WAEdata_new_y/result779/otherdata/Con_EU_dis.shp')
@@ -1159,25 +1167,66 @@ fwrite(Moran_Func,'/root/result/Moran_Func.csv')
 
 ######—— Fig.4###############
 #Fig.4 a
-Con_popentrpoul_sf <- vect ('/root/autodl-tmp/WAEdata_new_y/result779/worldBorder/continentNew.shp');head(Con_popentrpoul_sf)
-
-Con_Africa<-subset(Con_popentrpoul_sf,Con_popentrpoul_sf$CONTINENT=="Africa")
+Con_popentrpoul_sf <- vect ('/root/autodl-tmp/WAEdata_new_y/result779/otherdata/Con_EU_dis.shp');head(Con_popentrpoul_sf)
+Con_China<-subset(Con_popentrpoul_sf,Con_popentrpoul_sf$EU753=="China")
+Con_India<-subset(Con_popentrpoul_sf,Con_popentrpoul_sf$EU753=="India") 
+Con_EU<-subset(Con_popentrpoul_sf,Con_popentrpoul_sf$EU753=="EU")
+Con_US<-subset(Con_popentrpoul_sf,Con_popentrpoul_sf$EU753=="United States") 
 
 ggplot() +
   geom_sf(data = world.map, fill = "lightgrey", color = NA) + 
-  geom_sf(data = Con_Africa, fill = "#baa1a1", color = NA) +    #
-  coord_sf(crs = crs, xlim = c(-65, 60), ylim = c(-50, 50)) +
-  theme_bw() + #
+  geom_sf(data = Con_China, fill = "#baa1a1", color = NA) +    #lightcoral
+  geom_sf(data = Con_India, fill = "#baa1a1", color = NA) + 
+  geom_sf(data = Con_EU, fill = "#baa1a1", color = NA) + 
+  geom_sf(data = Con_Ethiopia, fill = "#baa1a1", color = NA) + 
+  geom_sf(data = Con_US, fill = "#baa1a1", color = NA) + 
+  coord_sf(crs = "+proj=longlat +datum=WGS84", xlim = c(-160, 165), ylim = c(-56, 90)) +
+  theme_bw() + # 
   theme(legend.position = "none",
         axis.text = element_text(size=12),
-        panel.grid.major = element_blank() )
+        panel.grid.major = element_blank() ) # )
 
 
-#【US pie】
+# Example:【US pie】
+lineardatalong <- rbind(correlation_country_summary_CH, correlation_country_summary_All)%>%data.table()
+lineardatalong<-lineardatalong %>%
+  mutate(Pd = cut(p_value, breaks = c(-Inf, 0.0001, 0.01, 0.05, Inf),
+                  labels = c("< 0.0001", "0.0001 - 0.01","0.01 - 0.05", "> 0.05")))%>%
+  mutate(rd = cut(r, breaks = c(-Inf, 0.4,0.5,0.6,0.7, Inf),
+                  labels = c("< 0.4", "0.4 - 0.5", "0.5 - 0.6", "0.6 - 0.7", "> 0.7")))
+head(lineardatalong)
+
+get_max_r2_rows <- function(dt, type) {
+  max_r2 <- dt[Type == type, .(Max_r = max(r)), by = .(Country, Predictor)]    # 
+  setkey(dt, Country, Predictor, r)                # 
+  setkey(max_r2, Country, Predictor, Max_r)
+  max_rows <- max_r2[dt, nomatch=0]      # 
+  #max_rows[, Max_r := NULL]    # Max_r
+  return(max_rows)
+}
+
+max_r2_rows_ALL <- get_max_r2_rows(lineardatalong, "All") 
+max_r2_rows_CH <- get_max_r2_rows(lineardatalong, "CH")
+lineardata_max <- rbind(max_r2_rows_ALL, max_r2_rows_CH)
+print(lineardata_max)
+lineardata_max$Color <- ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "< 0.4", "#FAE3D7",
+                               ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.4 - 0.5", "#F2B396",
+                                      ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.5 - 0.6", "#D9705A",
+                                             ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "0.6 - 0.7", "#B42D34",
+                                                    ifelse(lineardata_max$Type == "All" & lineardata_max$rd == "> 0.7", "#6E0D20",
+                                                           ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "< 0.4", "#FAE3D7",
+                                                                  ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.4 - 0.5", "#F2B396",
+                                                                         ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.5 - 0.6", "#D9705A",
+                                                                                ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "0.6 - 0.7", "#B42D34",
+                                                                                       ifelse(lineardata_max$Type == "CH" & lineardata_max$rd == "> 0.7", "#6E0D20",
+                                                                                              NA))))))))))
+#fwrite(lineardata_max,"/root/autodl-tmp/WAEdata_new_y/result779/lineardata_max_Pcor.csv")
+                        
+#eg. US data
 piedata_US <- lineardata_max[lineardata_max$Country == "United States", ]
 piedata_US$Value<-c(1,1,1,1,1,1)
 
-color_US<-c("pop_All"="#B42D34","pop_CH"="#B42D34","poul_All"="#D9705A","poul_CH"="#D9705A","cattle_All"="#D9705A","cattle_CH"="#F2B396")
+color_US<-c("pop_All"="#B42D34","pop_CH"="#B42D34","poul_All"="#D9705A","poul_CH"="#D9705A","cattle_All"="#D9705A","cattle_CH"="#D9705A")
 
 # 
 desired_order <- c("pop_CH","cattle_All","cattle_CH", "poul_All", "poul_CH","pop_All")
