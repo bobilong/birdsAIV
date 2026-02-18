@@ -120,6 +120,26 @@ addPercentPlot <- function(percentDf){
 }
 
 
+addHotspotCHEC <- function(r,legendName){
+  presentspdf <- crop(r,north) %>% resample(globalRaster) %>% 
+    as.data.frame(xy=T)
+  names(presentspdf)[3] <- 'sum' 
+  
+  p1 <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
+                max.lon = 180, min.lon = -180,
+                plt.lat.labels=F,
+                longitude.spacing = 60, 
+                land.fill.colour = "#F2F2F2",
+                land.outline.colour = "Black" ) +
+    geom_point(data = presentspdf, aes(x = x, y = y, color = sum),
+               shape = 15, size = 0.5, alpha = 0.7) +
+    scale_color_gradientn(colors=paletteer_d("colorBlindness::Blue2DarkRed12Steps"),
+      name = legendName,
+      limits = range(presentspdf$sum, na.rm = TRUE)
+    )
+  
+  return(p1)
+}
 
 
 #Fig. 1. Species richness#########
@@ -244,7 +264,7 @@ wrap_plots(barPlot_list) + plot_layout(nrow = 1, guides = "collect")
 
 
 
-#Fig. 2 CHEI ###############
+#Fig. 2 CHEC ###############
 host2 <- fread('/root/autodl-tmp/allBirdMonth/propertyData_qq/richness_185new.csv')
 table(host2$continent) 
 
@@ -370,41 +390,13 @@ print(legend)
 
 
 ##b###########
-addHotspotCHEI <- function(r,legendName){
-  presentspdf <- crop(r,north) %>% resample(globalRaster) %>% 
-    as.data.frame(xy=T)
-  names(presentspdf)[3] <- 'sum' 
-  
-  p1 <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
-                max.lon = 180, min.lon = -180,
-                plt.lat.labels=F,
-                longitude.spacing = 60, 
-                land.fill.colour = "#F2F2F2",
-                land.outline.colour = "Black" ) +
-    geom_point(data = presentspdf, aes(x = x, y = y, color = sum),
-               shape = 15, size = 0.5, alpha = 0.7) +
-    scale_color_gradientn(colors=paletteer_d("colorBlindness::Blue2DarkRed12Steps"),
-      name = legendName,
-      limits = range(presentspdf$sum, na.rm = TRUE)
-    )
-  
-  return(p1)
-}
-
-CHEI <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/presentCHEI_2newold.tif')
-addHotspotCHEI(CHEI,'CHEI')
-
-
-
-
-
-
-
+CHEC <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/presentCHEC_2newold.tif')
+addHotspotCHEC(CHEC,'CHEC')
 
 
 ##c-k#########
 addGrowthPlot <- function(future_path , sspName) {
-  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEI_2newold.tif')
+  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEC_2newold.tif')
   present_r[is.na(present_r)] <- 0 
   present_r <- mask(present_r, globalCountry)
   
@@ -445,7 +437,7 @@ addGrowthPlot <- function(future_path , sspName) {
     values = values,
     breaks = breaks, #pretty(range(df$value), n = 7),
     limits = range(breaks),
-    name = "ΔCHEI",
+    name = "ΔCHEC",
     oob = scales::squish
   )+
     #annotate("text", x = 0, y = 135, label = sspName, size = 5, fontface = "bold") +
@@ -458,11 +450,11 @@ addGrowthPlot <- function(future_path , sspName) {
 }
 
 
-futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEI2newold_',full.names = T)
-scene_names2 <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEI2newold_") %>%  unique()
+futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEC2newold_',full.names = T)
+scene_names2 <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEC2newold_") %>%  unique()
 
 futureRichPlot_list <- lapply(scene_names2, function(i) {
-  future_path <- grep(paste0("futureCHEI2newold_", i), futureSinglePaths, value = TRUE)
+  future_path <- grep(paste0("futureCHEC2newold_", i), futureSinglePaths, value = TRUE)
   result <- addGrowthPlot(future_path,  sspName = i)
   return(result)
 })
@@ -487,7 +479,7 @@ world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(co
 globalCountry <- vect(world.map) 
 
 countRedPixelsByContinentSSP <- function(future_path, year, sspName) {
-  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEI_2newold.tif')
+  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEC_2newold.tif')
   present_r[is.na(present_r)] <- 0
   present_r <- mask(present_r, globalCountry)
   
@@ -558,12 +550,12 @@ countRedPixelsByContinentSSP <- function(future_path, year, sspName) {
 }
 
 
-futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEI2newold_',full.names = T)
-scene_names <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEI2newold_") %>%  unique()
+futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEC2newold_',full.names = T)
+scene_names <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEC2newold_") %>%  unique()
 scene_names2 <- unique(scene_names[!grepl("ssp245", scene_names)])
 
 future_stats <- do.call(rbind, lapply(scene_names2, function(i) {
-  future_path <- grep(paste0("futureCHEI2newold_", i), futureSinglePaths, value = TRUE)
+  future_path <- grep(paste0("futureCHEC2newold_", i), futureSinglePaths, value = TRUE)
   year <- stringr::str_extract(i, "\\d{4}")
   ssp <- stringr::str_extract(i, "ssp\\d{3}")
   countRedPixelsByContinentSSP(future_path, year = as.integer(year), sspName = ssp)
@@ -649,7 +641,7 @@ stats_df3$x_mirror <- dplyr::case_when(
   TRUE ~ 0
 )
 
-#fwrite(stats_df3, "/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/stats_deltaCHEIArctic.csv")
+#fwrite(stats_df3, "/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/stats_deltaCHECArctic.csv")
 
 
 stats_df3$y <- as.numeric(factor(stats_df3$year, levels = c("2081", "2061", "2041")))
@@ -691,6 +683,464 @@ ggplot() +
     panel.spacing = unit(1.5, "lines")
   )
 
+
+
+#Fig. 3 CHEC in two Sectors###############
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+##a########
+create_sector_plot <- function(center_lon, lon_width, lat_min = 60, lat_max = 75, n = 100) {
+  lons <- seq(center_lon - lon_width/2, center_lon + lon_width/2, length.out = n)
+  top_arc <- cbind(lons, rep(lat_max, n))
+  bottom_arc <- cbind(rev(lons), rep(lat_min, n))
+  coords <- rbind(top_arc, bottom_arc, top_arc[1, ])  
+  p <- vect(matrix(coords, ncol = 2), type = "polygons", crs = crs)
+  return(p)
+}
+bering_sector <- create_sector_plot(center_lon = 180, lon_width = 90, lat_min = 60, lat_max = 90)
+atlantic_sector <- create_sector_plot(center_lon = -30, lon_width = 90, lat_min = 60, lat_max = 90)
+
+sectors <- rbind(bering_sector, atlantic_sector)
+
+sector_lines <- as.lines(sectors)
+coords_df <- as.data.frame(geom(sector_lines))
+coords_df$geom <- as.integer(coords_df$geom)
+coords_df$label <- c("Cross-Pacific sector", "Cross-Atlantic sector")[coords_df$geom]
+
+label_df <- coords_df %>%
+  group_by(label) %>%
+  summarise(x = mean(x), y = mean(y), .groups = "drop") %>%
+  mutate(color = case_when(
+    label == "Cross-Pacific sector" ~ "#3498DB",
+    label == "Cross-Atlantic sector" ~ "#E74C3C"
+  ))
+
+
+create_sector_vect <- function(center_lon, lon_width, lat_min = 60, lat_max = 90, n = 100) {
+  lon_min <- center_lon - lon_width / 2
+  lon_max <- center_lon + lon_width / 2
+  
+  # Wrap to [-180, 180]
+  lon_min <- ifelse(lon_min > 180, lon_min - 360, lon_min)
+  lon_max <- ifelse(lon_max > 180, lon_max - 360, lon_max)
+  
+  if (lon_min > lon_max) {
+    # Crosses the dateline: split into two polygons
+    lons1 <- seq(lon_min, 180, length.out = n)
+    lons2 <- seq(-180, lon_max, length.out = n)
+    
+    top1 <- cbind(lons1, rep(lat_max, n))
+    bottom1 <- cbind(rev(lons1), rep(lat_min, n))
+    coords1 <- rbind(top1, bottom1, top1[1, ])
+    
+    top2 <- cbind(lons2, rep(lat_max, n))
+    bottom2 <- cbind(rev(lons2), rep(lat_min, n))
+    coords2 <- rbind(top2, bottom2, top2[1, ])
+    
+    p <- vect(list(coords1, coords2), type = "polygons", crs = "EPSG:4326")
+  } else {
+    lons <- seq(lon_min, lon_max, length.out = n)
+    top_arc <- cbind(lons, rep(lat_max, n))
+    bottom_arc <- cbind(rev(lons), rep(lat_min, n))
+    coords <- rbind(top_arc, bottom_arc, top_arc[1, ])
+    p <- vect(matrix(coords, ncol = 2), type = "polygons", crs = "EPSG:4326")
+  }
+  
+  return(p)
+}
+bering_sector2 <- create_sector_vect(center_lon = 180, lon_width = 90, lat_min = 60, lat_max = 90)
+atlantic_sector2 <- create_sector_vect(center_lon = -30, lon_width = 90, lat_min = 60, lat_max = 90)
+sectors2 <- rbind(bering_sector2, atlantic_sector2)
+
+present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/presentCHEC_2newold.tif')
+present_r[is.na(present_r)] <- 0 
+present_r <- mask(present_r, globalCountry) %>% mask(., sectors2) 
+df <- crop(present_r, north) %>% resample(globalRaster) %>%
+  as.data.frame(xy = TRUE, na.rm = TRUE)
+colnames(df)[3] <- "CHEC"
+
+ggpolar(pole = "N", max.lat = 90, min.lat = 0,
+        max.lon = 180, min.lon = -180,
+        plt.lat.labels = FALSE,
+        longitude.spacing = 60,
+        land.fill.colour = "#F2F2F2",
+        land.outline.colour = "darkgrey") +
+  geom_tile(data = df, aes(x = x, y = y, fill = CHEC)) +
+  scale_fill_gradientn(colours = paletteer_d("colorBlindness::Blue2DarkRed12Steps")) +
+  geom_path(data = coords_df, aes(x = x, y = y, group = geom, color = label), size = 0.8) +
+  scale_color_manual(values = c(
+    "Cross-Pacific sector" = "#3498DB",
+    "Cross-Atlantic sector" = "#E74C3C"
+  )) +
+  theme_minimal() +
+  theme(legend.position = "left",
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=16))
+
+
+
+
+##b-c########
+create_sector_vect <- function(center_lon, lon_width, lat_min = 60, lat_max = 90, n = 100) {
+  lon_min <- center_lon - lon_width / 2
+  lon_max <- center_lon + lon_width / 2
+  
+  # Wrap to [-180, 180]
+  lon_min <- ifelse(lon_min > 180, lon_min - 360, lon_min)
+  lon_max <- ifelse(lon_max > 180, lon_max - 360, lon_max)
+  
+  if (lon_min > lon_max) {
+    # Crosses the dateline: split into two polygons
+    lons1 <- seq(lon_min, 180, length.out = n)
+    lons2 <- seq(-180, lon_max, length.out = n)
+    
+    top1 <- cbind(lons1, rep(lat_max, n))
+    bottom1 <- cbind(rev(lons1), rep(lat_min, n))
+    coords1 <- rbind(top1, bottom1, top1[1, ])
+    
+    top2 <- cbind(lons2, rep(lat_max, n))
+    bottom2 <- cbind(rev(lons2), rep(lat_min, n))
+    coords2 <- rbind(top2, bottom2, top2[1, ])
+    
+    p <- vect(list(coords1, coords2), type = "polygons", crs = "EPSG:4326")
+  } else {
+    lons <- seq(lon_min, lon_max, length.out = n)
+    top_arc <- cbind(lons, rep(lat_max, n))
+    bottom_arc <- cbind(rev(lons), rep(lat_min, n))
+    coords <- rbind(top_arc, bottom_arc, top_arc[1, ])
+    p <- vect(matrix(coords, ncol = 2), type = "polygons", crs = "EPSG:4326")
+  }
+  
+  return(p)
+}
+bering_sector <- create_sector_vect(center_lon = 180, lon_width = 90, lat_min = 60, lat_max = 90)
+atlantic_sector <- create_sector_vect(center_lon = -30, lon_width = 90, lat_min = 60, lat_max = 90)
+
+sectors <- rbind(bering_sector, atlantic_sector)
+
+
+#
+Compute_CHEC_sectors <- function(r_path, year, sspName) {
+  r <- rast(r_path)
+    r[is.na(r)] <- 0
+    r <- mask(r, globalCountry)
+
+  sector_list <- list(
+    Bering = bering_sector,
+    Atlantic = atlantic_sector
+  )
+  if (year == 2021) {
+    sector_list <- list(
+      Bering = bering_sector,
+      Atlantic = create_sector_vect(center_lon = -23, lon_width = 90, lat_min = 60, lat_max = 90)
+    )
+    
+  }
+  result_list <- lapply(names(sector_list), function(region_name) {
+    region <- sector_list[[region_name]]
+    masked_r <- mask(r, region)
+    total_CHEC <- global(masked_r, fun = "sum", na.rm = TRUE)[1, 1]
+    mean_CHEC <- global(masked_r, fun = "mean", na.rm = TRUE)[1, 1]
+    
+    data.frame(
+      ssp = sspName,
+      year = year,
+      region = region_name,
+      total_CHEC = total_CHEC,
+      mean_CHEC = mean_CHEC
+    )
+  })
+  
+  result_df <- do.call(rbind, result_list)
+  return(result_df)
+}
+
+futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEC2newold_',full.names = T)
+scene_names2 <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEC2newold_") %>%  unique()
+
+future_stats <- do.call(rbind, lapply(scene_names2, function(i) {
+  future_path <- grep(paste0("futureCHEC2newold_", i), futureSinglePaths, value = TRUE)
+  year <- stringr::str_extract(i, "\\d{4}")
+  ssp <- stringr::str_extract(i, "ssp\\d{3}")
+  Compute_CHEC_sectors(future_path, year = as.integer(year), sspName = ssp)
+}))
+
+present_path <- '/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/presentCHEC_2newold.tif'
+present_stats <- do.call(rbind, lapply(scene_names2, function(i) {
+  ssp <- stringr::str_extract(i, "ssp\\d{3}")
+  Compute_CHEC_sectors(present_path, year = 2021, sspName = ssp)
+}))
+
+all_CHEC_stats <- rbind(present_stats, future_stats)
+plot_df <- all_CHEC_stats %>%
+  mutate(
+    year = as.integer(year),
+    region = factor(region, levels = c("Bering", "Atlantic")),
+    ssp = factor(ssp)  )
+
+
+plot_df$SSP <- dplyr::case_when(
+  plot_df$ssp == "ssp126" ~ "SSP1-2.6",
+  plot_df$ssp == "ssp370" ~ "SSP3-7.0",
+  plot_df$ssp == "ssp585" ~ "SSP5-8.5",
+  TRUE ~ plot_df$ssp
+)
+plot_df$year_long <- dplyr::case_when(
+  plot_df$year == 2021 ~ "2020",# plot_df$year == 2021 ~ "Present",
+  plot_df$year == 2041 ~ "2041-2060",
+  plot_df$year == 2061 ~ "2061-2080",
+  plot_df$year == 2081 ~ "2081-2100",
+  TRUE ~ as.character(plot_df$year)
+)
+
+plot_df$year_long <- factor(plot_df$year_long , levels = c("2020", "2041-2060", "2061-2080", "2081-2100"))
+
+p1 <- ggplot(plot_df, aes(x = year_long, y = mean_CHEC, color = region, group = region)) +  #total_CHEC
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  facet_wrap(~ SSP) +
+  scale_color_manual(values = c(
+    "Bering" = "#3498DB",     # 
+    "Atlantic" = "#E74C3C"    #
+  )) +
+  #scale_x_continuous(breaks = c(2021, 2041, 2061, 2081)) +
+  #scale_x_continuous(breaks = c(2041, 2061, 2081)) +
+  scale_y_continuous(limits = c(min(plot_df$mean_CHEC)-1, max(plot_df$mean_CHEC)+1)) + #min(plot_df$mean_CHEC)-1
+  labs(x = NULL,y = "Mean CHEC",  color = "Region" ) +  #Total CHEC
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 15),
+    axis.text = element_text(size = 13),
+    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    panel.spacing = unit(1.5, "lines")
+  )
+
+
+p2 <- ggplot(plot_df, aes(x = year_long, y = total_CHEC, color = region, group = region)) +  #total_CHEC
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  facet_wrap(~ SSP) +
+  scale_color_manual(values = c(
+    "Bering" = "#3498DB",     #
+    "Atlantic" = "#E74C3C"    # 
+  )) +
+  #scale_x_continuous(breaks = c(2021, 2041, 2061, 2081)) +
+  #scale_x_continuous(breaks = c(2041, 2061, 2081)) +
+  scale_y_continuous(limits = c(min(plot_df$total_CHEC)-1000, max(plot_df$total_CHEC)+1000)) + 
+  labs(x = NULL,y = "Total CHEC",  color = "Region" ) +  #Total CHEC
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 15),
+    axis.text = element_text(size = 13),
+    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    panel.spacing = unit(1.5, "lines")
+  )
+
+p1/p2
+
+
+
+#Fig. 4 Host traits###############
+library(tidybayes)
+
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+host2 <-  fread('/root/autodl-tmp/allBirdMonth/propertyData_qq/richness_185new2.csv')
+resultDf <- fread('/root/autodl-tmp/allBirdMonth/result_summer/GLMresult/result_NewOldoverlap.csv')
+resultDf$year <- str_sub(resultDf$scenario,1,4)
+increaseArea2081 <- subset(resultDf,resultDf$year=='2081'&resultDf$turnover>0)
+increaseArea2081$detaEncounter <- (increaseArea2081$future_overlap-increaseArea2081$present_overlap)/increaseArea2081$present_overlap
+
+modelDf <- left_join(increaseArea2081,host2, by = c("Host"="Host"))
+modelDf$Diet2 <- factor(modelDf$Diet2)
+modelDf$`Migration-1` <- factor(modelDf$`Migration-1`)
+
+library(brms)
+df <- modelDf[,c('detaEncounter','turnover','order','scenario','generational_length','HWI','Body mass (log)','Diet2','FunctionalGroup','MainForStrat_grouped')] %>% 
+  as.data.table()
+
+names(df)[7] <- c('Body_mass')
+
+
+df_input <- na.omit(df) 
+df_wide <- df_input %>%
+  mutate(
+    Body_mass_z           = as.numeric(scale(Body_mass)),
+    HWI_z                 = as.numeric(scale(HWI)),
+    generational_length_z = as.numeric(scale(generational_length)),
+    scenario              = as.factor(scenario),
+    diet                  = factor(Diet2),
+    group                 = factor(FunctionalGroup),
+    foraging              = factor(MainForStrat_grouped),
+  )
+
+
+contrasts(df_wide$diet)  <- contr.sum(length(levels(df_wide$diet)))
+contrasts(df_wide$group) <- contr.sum(length(levels(df_wide$group)))
+contrasts(df_wide$foraging) <- contr.sum(length(levels(df_wide$foraging)))
+
+priors_tighter_sd <- c(
+  set_prior("student_t(3, 0, 5)", class = "Intercept"),
+  set_prior("normal(0, 1)", class = "b"),
+  set_prior("student_t(3, 0, 2.5)", class = "sigma"),
+  set_prior("student_t(3, 0, 0.5)", class = "sd", group = "scenario"),
+  set_prior("gamma(2, 0.5)", class = "nu")
+)
+
+fit_t_best_sd05 <- brm(
+  detaEncounter ~ HWI_z + generational_length_z + diet + group + foraging + (1 | scenario),
+  data    = df_wide,
+  family  = student(),
+  prior   = priors_tighter_sd,
+  chains  = 4, cores = 4, iter = 12000, warmup = 4000,
+  control = list(adapt_delta = 0.9999, max_treedepth = 20),
+  seed    = 2025
+)
+
+#saveRDS(fit_t_best_sd05, file = "/root/autodl-tmp/allBirdMonth/result_summer/GLMresult/detaEncounter_lin3v2_nobody.rds")
+
+fit_t_best_sd05 <- readRDS("/root/autodl-tmp/allBirdMonth/result_summer/GLMresult/detaEncounter_lin3v2_nobody.rds")
+draws_df <- as_draws_df(fit_t_best_sd05)
+
+draws_absolute <- draws_df %>%
+  mutate(
+    diet_Carnivorous = b_Intercept + b_diet1,
+    diet_Herbivorous = b_Intercept + b_diet2,
+    diet_Omnivorous  = b_Intercept - (b_diet1 + b_diet2),
+    
+    group_LargeWadingBirds = b_Intercept + b_group1,
+    group_Others           = b_Intercept + b_group2,
+    group_Seabirds         = b_Intercept + b_group3,
+    group_Shorebirds       = b_Intercept + b_group4,
+    group_Waterfowl        = b_Intercept - (b_group1 + b_group2 + b_group3 + b_group4),
+    
+    foraging_forest      = b_Intercept + b_foraging1,
+    foraging_ground      = b_Intercept + b_foraging2,
+    foraging_onwater     = b_Intercept + b_foraging3,
+    foraging_belowwater  = b_Intercept - (b_foraging1 + b_foraging2 + b_foraging3)
+  )
+
+summary_effects <- draws_absolute %>%
+  select(starts_with("diet_"), starts_with("group_"), starts_with("foraging_")) %>%
+  pivot_longer(cols = everything(), names_to = "category", values_to = "effect") %>%
+  group_by(category) %>%
+  median_qi(effect, .width = 0.95) %>%
+  mutate(
+    type = case_when(
+      startsWith(category, "diet_") ~ "Diet",
+      startsWith(category, "group_") ~ "Group",
+      startsWith(category, "foraging_") ~ "Foraging"
+    ),
+    label = gsub("diet_|group_|foraging_", "", category)
+  )
+
+ce <- conditional_effects(fit_t_best_sd05, 
+                          effects = c("Body_mass_z", "HWI_z", "generational_length_z"), 
+                          prob = 0.90)
+
+my_theme <- theme_classic() + 
+  theme(text = element_text(size = 16), axis.title = element_text(size = 13))
+
+
+
+p2 <- ggplot(df_wide, aes(x = HWI_z, y = detaEncounter)) +
+  #geom_point(alpha = 0.3, size = 1.5, color = "grey40") +
+  geom_line(data = plot(ce, plot = FALSE)[[1]]$data,
+            aes(y = estimate__), color = "deepskyblue3", linewidth = 1) +
+  geom_ribbon(data = plot(ce, plot = FALSE)[[1]]$data,
+              aes(ymin = lower__, ymax = upper__), 
+              fill = "lightcyan", alpha = 0.4) +
+  labs(x = "HWI (z)", y = expression(paste("Positive ", Delta*CHEC[i]))) +
+  my_theme #+
+  #ylim(6,18)
+
+p3 <- ggplot(df_wide, aes(x = generational_length_z, y = detaEncounter)) +  #log(detaEncounter)
+  #geom_point(alpha = 0.3, size = 1.5, color = "grey40") +
+  geom_line(data = plot(ce, plot = FALSE)[[2]]$data,
+            aes(y = estimate__), color = "deepskyblue3", linewidth = 1) +
+  geom_ribbon(data = plot(ce, plot = FALSE)[[2]]$data,
+              aes(ymin = lower__, ymax = upper__), 
+              fill = "lightcyan", alpha = 0.4) +
+  labs(x = "Generational length (z)", y = expression(paste("Positive ", Delta*CHEC[i]))) +
+  my_theme #+ 
+  #ylim(3,18)
+
+baseline_val <- median(draws_df$b_Intercept)
+
+diet_data <- summary_effects %>% 
+  filter(type == "Diet") %>%
+  mutate(label = factor(label, levels = c("Carnivorous", "Herbivorous", "Omnivorous")))
+
+p4 <- ggplot(diet_data, aes(x = label, y = effect)) +
+  geom_hline(yintercept = baseline_val, linetype = 2, color = "grey50") +
+  geom_errorbar(aes(ymin = .lower, ymax = .upper, color = label), width = 0.2) +
+  geom_point(aes(color = label), shape = 21, size = 3) +
+  labs(y = expression(paste("Positive ", Delta*CHEC[i])), x = NULL) +
+  my_theme + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+group_data <- summary_effects %>% 
+  filter(type == "Group") %>%
+  mutate(
+    label = case_when(
+      label == "LargeWadingBirds" ~ "Large wading birds",
+      TRUE ~ label
+    ),
+    label = factor(label, levels = c("Large wading birds", "Waterfowl", "Seabirds", "Shorebirds", "Others"))
+  )
+
+p5 <- ggplot(group_data, aes(x = label, y = effect)) +
+  geom_hline(yintercept = baseline_val, linetype = 2, color = "grey50") +
+  geom_errorbar(aes(ymin = .lower, ymax = .upper, color = label), width = 0.2) +
+  geom_point(aes(color = label), shape = 21, size = 3) +
+  labs(y = expression(paste("Positive ", Delta*CHEC[i])), x = NULL) +
+  my_theme + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+foraging_data <- summary_effects %>% 
+  filter(type == "Foraging") %>%
+  mutate(label = factor(label, 
+                        levels = c("belowwater", "onwater", "ground", "forest" ),
+                        labels = c("Below water", "On water", "Ground", "Above ground")))
+
+p6 <- ggplot(foraging_data, aes(x = label, y = effect)) +
+  geom_hline(yintercept = baseline_val, linetype = 2, color = "grey50") +
+  geom_errorbar(aes(ymin = .lower, ymax = .upper, color = label), width = 0.2) +
+  geom_point(aes(color = label), shape = 21, size = 3) +
+  labs(y = expression(paste("Positive ", Delta*CHEC[i])), x = NULL) +
+  my_theme + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+(p3 + p2) / (p5 + p4 + p6)
+
+summary_all <- draws_absolute %>%
+  mutate(
+    `Trait: HWI` = b_HWI_z,
+    #`Trait: Body Mass` = b_Body_mass_z,
+    `Trait: Gen Length` = b_generational_length_z
+  ) %>%
+  select(starts_with("diet_"), starts_with("group_"), starts_with("foraging_"), starts_with("Trait:")) %>%
+  pivot_longer(cols = everything(), names_to = "Parameter", values_to = "Value") %>%
+  group_by(Parameter) %>%
+  summarise(
+    Med = median(Value), Lo = quantile(Value, 0.025), Hi = quantile(Value, 0.975),
+    MPE = if (median(Value) > 0) mean(Value > 0) else mean(Value < 0)
+  ) %>%
+  mutate(Output = sprintf("%.3f, 95%% CI %.2f–%.2f, MPE = %.1f%%", Med, Lo, Hi, MPE * 100))
+
+cat("\n--- Report ---\n")
+print(summary_all %>% select(Parameter, Output))
 
 
 
