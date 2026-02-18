@@ -1,1 +1,711 @@
+library(ggtree)         
+library(ggtreeExtra)    
+library(ggnewscale)     
+library(paletteer)     
+library(ggthemes)       
+library(scales)        
+library(ggplot2)        
+library(dplyr)         
+library(terra)
+library(grfxtools)
+library(stringr)
+
+
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+
+
+#Function#####
+addHotspot <- function(r,legendName){
+  presentspdf <- crop(r,north) %>% resample(globalRaster) %>% 
+    as.data.frame(xy=T)
+  names(presentspdf)[3] <- 'sum' 
+  
+  p1 <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
+                max.lon = 180, min.lon = -180,
+                plt.lat.labels=F,
+                # lat.ax.labs.pos = 180, #
+                longitude.spacing = 60, 
+                land.fill.colour = "#F2F2F2",#ffffcc
+                land.outline.colour = "Black" )+
+    # geom_tile(data=futureWAENorth,aes(x,y))+
+    geom_point(data=presentspdf, aes(x = x, y = y, color = sum),shape=15, size = 0.5, alpha = 0.7)+
+    scale_color_gradientn(colors=paletteer_d("colorBlindness::Blue2Orange10Steps"),
+                          name=legendName,
+                          # limits = c(1, 165)
+    )+
+    theme(legend.text = element_text(size=14))
+  
+  q25_nonzero <- global(r, fun = \(x) quantile(x, 0.75, na.rm  = TRUE))[[1]]
+  q10_nonzero <- global(r, fun = \(x) quantile(x, 0.95, na.rm  = TRUE))[[1]]
+  
+  presentspdf$color <- ifelse(presentspdf$sum>q10_nonzero,'red',ifelse(presentspdf$sum<q25_nonzero,'grey','yellow'))
+  presentspdf$color <- factor(presentspdf$color, levels = c('red','yellow','grey'))
+  p2 <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
+                max.lon = 180, min.lon = -180,
+                plt.lat.labels=F,
+                # lat.ax.labs.pos = 180, #
+                longitude.spacing = 60, 
+                land.fill.colour = "#F2F2F2",#ffffcc
+                land.outline.colour = "Black" )+
+    # geom_tile(data=futureWAENorth,aes(x,y))+
+    geom_point(data=presentspdf, aes(x = x, y = y, color = color),shape=15, size = 0.5, alpha = 0.7)+
+    scale_color_identity()+
+    scale_color_manual(
+      name = "Hotspots",values = c('red','yellow','grey'), 
+      labels = c("Top 5%", "Top 10%", "Other")  # 
+    ) +
+    theme(legend.text = element_text(size=14))
+  return(p1/p2)
+}
+
+addSlopePlot <- function(futureAEdf,sspName){
+  p <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
+               max.lon = 180, min.lon = -180,
+               plt.lat.labels=F,
+               # lat.ax.labs.pos = 180, #
+               longitude.spacing = 60, 
+               land.fill.colour = "#F2F2F2",#ffffcc
+               land.outline.colour = "Black" )+
+    # geom_tile(data=futureWAENorth,aes(x,y))+
+    geom_point(data=futureAEdf, aes(x = x, y = y, color = sigType),shape=15, size = 0.5, alpha = 0.7)+
+    # scale_color_gradientn(colors=paletteer_d("colorBlindness::Blue2Orange10Steps"),
+    #                       limits = c(1, 5))+
+    #annotate("text", x = 0, y = 135, label = sspName, size = 5, fontface = "bold")+
+    theme(
+      legend.position = 'none'
+    )
+  return(p)
+}
+
+addPercentPlot <- function(percentDf){
+  percentDf$value <- if_else(percentDf$direction=='positive',percentDf$value,-percentDf$value)
+  p <- ggplot(percentDf, aes(x = lat, y = value, fill = variable)) +
+    geom_bar(stat = "identity", width = 0.7, colour = "black") +
+    geom_hline(yintercept = 0) +
+    coord_flip()+
+    scale_y_continuous(labels = function(x) paste0(abs(x), "%"),
+                       breaks = seq(-ceiling(max(abs(percentDf$value))/10)*10, ceiling(max(abs(percentDf$value))/10)*10, by = 60)
+                       # breaks = sort(unique(c(
+                       #   0,
+                       #   seq(-ceiling(max(abs(percentDf$value))/10)*10,
+                       #       ceiling(max(abs(percentDf$value))/10)*10,
+                       #       by = 120)
+                       # )))
+                       
+                       ) +
+    scale_fill_manual(
+      values = c(
+        "Not-sig" = "white",
+        "positive_significant_percent" = "#e31a1c",   
+        "negative_significant_percent" = "#1f78b4"    
+      ),
+      labels = c(
+        "Not-sig" = "Not sig",
+        "positive_significant_percent" = "Positive sig",
+        "negative_significant_percent" = "Negative sig"
+      ),
+      guide = guide_legend(reverse = TRUE)
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(size = 16),
+      axis.text.y = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      legend.position = "none"
+    ) +
+    labs(x = NULL, y = "Proportion (%)", fill = NULL)
+  return(p)
+}
+
+
+
+
+#Fig. 1. Species richness#########
+##a-b######
+richness <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentspNumTif.tif')
+addHotspot(richness,'Species richness')
+
+##c-e######
+slopePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureslope/','spNum',full.names=T)
+allSppName2 <- basename(slopePaths) %>% str_sub(.,1,-5) %>% str_split_i('_',2)
+
+futurePlot_list <- lapply(allSppName2, function(i) {
+  futureSingleRast <- grep(i,slopePaths,value=T) %>% rast()
+  names(futureSingleRast) <- c('slope','R2','p')
+  futureAEdf <- crop(futureSingleRast[[c('slope','p')]],north) %>% resample(globalRaster) %>% 
+    as.data.frame(xy=T) %>% na.omit()
+  futureAEdf$sig <- ifelse(futureAEdf$p<=0.05,'Significant','Non-Significant')
+  futureAEdf$direction <- ifelse(futureAEdf$slope>0,'Positive','Negative')
+  futureAEdf$sigType <- paste0(futureAEdf$sig,'_',futureAEdf$direction)
+  p <- addSlopePlot(futureAEdf,i)
+  return(p)
+})
+
+patchwork::wrap_plots(futurePlot_list) + 
+  patchwork::plot_layout(nrow = 1, guides = "collect") +
+  theme(
+    legend.position = "left",
+    legend.title = element_blank(),
+    legend.key = element_rect(fill = "white"),  #
+    legend.background = element_rect(fill = "white"),  # 
+    # legend.justification = "center"
+  )&
+  scale_color_manual(
+    values = c('#C11A3B','#FFBEB2','#2A5783','#B9DDF1'),
+    breaks = c('Significant_Positive','Non-Significant_Positive',
+               'Significant_Negative','Non-Significant_Negative'),
+    guide = guide_legend(
+      override.aes = list(
+        shape = 19,  # 
+        size = 4     # 
+      )
+    )
+  )
+
+##f-h######
+percentData <- lapply(allSppName2, function(i) {
+  futureSingleRast <- grep(i,slopePaths,value=T) %>% rast()
+  names(futureSingleRast) <- c('slope','R2','p')
+  futureAEdf <- crop(futureSingleRast[[c('slope','p')]],north) %>% resample(globalRaster) %>% 
+    as.data.frame(xy=T) %>% na.omit()
+  # futureAEdf2 <- mutate(futureAEdf,lat=cut(
+  #   futureAEdf$y,
+  #   breaks = c(0, 23.5, 66.5, 90), 
+  #   labels = c("Tropics", "Temperate", "Arctic"),
+  #   include.lowest=T
+  # )) %>% mutate(.,ssp=i)  %>%  mutate(.,status=ifelse(slope>0,'increase','decrease')) %>% 
+  #   as.data.table() %>% na.omit()
+  futureAEdf2 <- mutate(futureAEdf,lat=cut(
+    futureAEdf$y,
+    breaks = c(0, 23.5, 66.5, 90),
+    labels = c("Tropics", "Temperate", "Arctic"),
+    include.lowest=T
+  )) %>% mutate(.,ssp=i) %>% as.data.table()
+  futureAEdf2$sig <- ifelse(futureAEdf2$p<=0.05,'Significant','Non-Significant')
+  futureAEdf2$direction <- ifelse(futureAEdf2$slope>0,'Positive','Negative')
+  
+  result <- futureAEdf2[, {
+    total_count = .N
+    
+    pos_count = sum(direction == "Positive")
+    neg_count = sum(direction == "Negative")
+    
+    pos_sig = sum(direction == "Positive" & sig == "Significant")
+    pos_nonsig = sum(direction == "Positive" & sig == "Non-Significant")
+    
+    neg_sig = sum(direction == "Negative" & sig == "Significant")
+    neg_nonsig = sum(direction == "Negative" & sig == "Non-Significant")
+    
+    list(
+      # total_count = total_count,
+      # positive_count = pos_count,
+      # positive_percent = round(pos_count/total_count * 100, 2),
+      # negative_count = neg_count,
+      # negative_percent = round(neg_count/total_count * 100, 2),
+      # positive_significant_count = pos_sig,
+      positive_significant_percent = round(pos_sig/total_count * 100, 2),
+      # positive_nonsignificant_count = pos_nonsig,
+      positive_nonsignificant_percent = round(pos_nonsig/total_count * 100, 2),
+      # negative_significant_count = neg_sig,
+      negative_significant_percent = round(neg_sig/total_count * 100, 2),
+      # negative_nonsignificant_count = neg_nonsig,
+      negative_nonsignificant_percent = round(neg_nonsig/total_count * 100, 2)
+    )
+  }, by = .(lat, ssp)]
+  
+  return(result)
+}) %>% rbindlist()
+percentData2 <- melt(percentData,id=1:2,measure=3:6)
+percentData2$variable <- as.character(percentData2$variable)
+percentData2$direction <- str_split_i(percentData2$variable,'_',1)
+percentData2$variable <- ifelse(percentData2$variable%in%c('positive_significant_percent','negative_significant_percent'),
+                                percentData2$variable,'Not-sig')
+
+barPlot_list <- lapply(unique(percentData2$ssp), function(i) {
+  subPercentDf <- subset(percentData2,percentData2$ssp==i)
+  
+  p <- addPercentPlot(subPercentDf)
+  return(p)
+})
+
+library(purrr)
+barPlot_list <- map(barPlot_list, ~ .x + theme(
+  axis.text.x = element_text(size = 12),
+  axis.text.y = element_text(size = 12),
+  legend.text = element_text(size = 14),
+  axis.title = element_text(size = 14),
+  legend.position = "left"
+))
+wrap_plots(barPlot_list) + plot_layout(nrow = 1, guides = "collect")
+
+
+
+
+
+#Fig. 2 CHEI ###############
+host2 <- fread('/root/autodl-tmp/allBirdMonth/propertyData_qq/richness_185new.csv')
+table(host2$continent) 
+
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+
+##a#####
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+#10*10 color
+bivariate_color_scale <- tibble(
+  "1 - 10" ="#00FFFF","2 - 10" = "#11E6FD", "3 - 10" ="#23CDFB","4 - 10" = "#35B4FA","5 - 10" ="#479BF8","6 - 10"= "#5883F6","7 - 10" ="#6A6AF5","8 - 10" ="#7C51F3","9 - 10" ="#8E38F1","10 - 10" ="#A020F0",
+  "1 - 9" = "#1BFDFB", "2 - 9" = "#2AE4F7", "3 - 9" = "#3ACCF4", "4 - 9" = "#4AB4F0","5 - 9" = "#5A9CED","6 - 9" = "#6A83E9","7 - 9" = "#7A6BE6","8 - 9" = "#8A53E2","9 - 9" = "#9A3BDF","10 - 9" = "#AA23DC",
+  "1 - 8" = "#36FCF7", "2 - 8" = "#44E4F1", "3 - 8" = "#52CCEC", "4 - 8" = "#60B5E7","5 - 8" = "#6E9DE2","6 - 8" = "#7C85DC","7 - 8" = "#8A6ED7","8 - 8" = "#9856D2","9 - 8" = "#A63ECD","10 - 8" = "#B527C8",
+  "1 - 7" = "#51FBF3", "2 - 7" = "#5DE3EC", "3 - 7" = "#69CCE5", "4 - 7" = "#75B5DE","5 - 7" = "#819ED7","6 - 7" = "#8E86D0","7 - 7" = "#9A6FC9","8 - 7" = "#A658C2","9 - 7" = "#B241BB","10 - 7" = "#BF2AB5",
+  "1 - 6" = "#6CFAEF", "2 - 6" = "#76E3E6", "3 - 6" = "#80CCDD", "4 - 6" = "#8BB6D5","5 - 6" = "#959FCC","6 - 6" = "#A088C3","7 - 6" = "#AA72BB","8 - 6" = "#B55BB2","9 - 6" = "#BF44A9","10 - 6" = "#CA2EA1",
+  "1 - 5" = "#88F9EB", "2 - 5" = "#90E2E0", "3 - 5" = "#98CCD6", "4 - 5" = "#A1B6CB","5 - 5" = "#A9A0C1","6 - 5" = "#B289B7","7 - 5" = "#BA73AD","8 - 5" = "#C35DA2","9 - 5" = "#CB4798","10 - 5" = "#D4318E",
+  "1 - 4" = "#A3F8E7", "2 - 4" = "#A9E2DA", "3 - 4" = "#B0CCCE", "4 - 4" = "#B7B7C2","5 - 4" = "#BDA1B6","6 - 4" = "#C48BAA","7 - 4" = "#CB769E","8 - 4" = "#D16092","9 - 4" = "#D84A86","10 - 4" = "#DF357A",
+  "1 - 3" = "#BEF7E3", "2 - 3" = "#C2E1D5", "3 - 3" = "#C7CCC7", "4 - 3" = "#CCB7B9","5 - 3" = "#D1A2AB","6 - 3" = "#D58C9E","7 - 3" = "#DA7790","8 - 3" = "#DF6282","9 - 3" = "#E44D74","10 - 3" = "#E93867",
+  "1 - 2" = "#D9F6DF", "2 - 2" = "#DBE1CF", "3 - 2" = "#DFCCBF", "4 - 2" = "#E2B8B0","5 - 2" = "#E5A3A0","6 - 2" = "#E88E91","7 - 2" = "#EB7981","8 - 2" = "#EE6572","9 - 2" = "#F15062","10 - 2" = "#F43C53",
+  "1 - 1" = "#F5F5DC", "2 - 1" = "#F6E0CA", "3 - 1" = "#F7CCB9", "4 - 1" = "#F8B8A8","5 - 1" = "#F9A496","6 - 1" = "#FA9085","7 - 1" = "#FB7C74","8 - 1" = "#FC6862","9 - 1" = "#FD5451","10 - 1" = "#FF4040",
+ 
+) %>%
+  gather("group", "fill")
+
+newWorldRich <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/newWorld_Rich.tif')
+oldWorldRich <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/oldWorld_Rich.tif')
+oldfutureRich <- rast('/root/autodl-tmp/allBirdMonth/result_summer/futureSingle/combineTwoRouteRichness//oldWorldRich_2041ssp126.tif')
+oldfutureRich1 <- ifel(oldfutureRich>1, 1,0)
+oldWorldRich <- oldWorldRich*oldfutureRich1
+
+newWorldRich[is.na(newWorldRich)] <- 0 
+newWorldRich <- mask(newWorldRich, globalCountry)
+newWorldRich <- newWorldRich*oldfutureRich1
+
+newWorldRich_df <- as.data.frame(newWorldRich, xy = TRUE)
+oldWorldRich_df <- as.data.frame(oldWorldRich, xy = TRUE)
+
+names(newWorldRich_df) <- c("x", "y", "rich_new")
+names(oldWorldRich_df) <- c("x", "y", "rich_old")
+
+normalize <- function(x) {
+  return((x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE)))
+}
+
+newWorldRich_df$rich_new_n <- normalize(newWorldRich_df$rich_new)
+oldWorldRich_df$rich_old_n <- normalize(oldWorldRich_df$rich_old)
+
+rich_df <- left_join(newWorldRich_df, oldWorldRich_df, by = c("x", "y"))
+rich_df <- na.omit(rich_df)
+
+quantiles_new <- quantile(rich_df$rich_new_n, probs = seq(0, 1, length.out = 11))
+quantiles_old <- quantile(rich_df$rich_old_n, probs = seq(0, 1, length.out = 11))
+
+if (any(duplicated(quantiles_new))) {
+  eps <- 1e-10
+  for (i in 2:length(quantiles_new)) {
+    if (quantiles_new[i] <= quantiles_new[i - 1]) {
+      quantiles_new[i] <- quantiles_new[i - 1] + eps
+    }
+  }
+}
+if (any(duplicated(quantiles_old))) {
+  eps <- 1e-10
+  for (i in 2:length(quantiles_old)) {
+    if (quantiles_old[i] <= quantiles_old[i - 1]) {
+      quantiles_old[i] <- quantiles_old[i - 1] + eps
+    }
+  }
+}
+
+rich_df <- rich_df %>%
+  mutate(
+    new_q = cut(rich_new_n, breaks = quantiles_new, labels = FALSE, include.lowest = TRUE),
+    old_q = cut(rich_old_n, breaks = quantiles_old, labels = FALSE, include.lowest = TRUE),
+    group = paste(new_q, "-", old_q)
+  ) %>%
+  left_join(bivariate_color_scale, by = "group")
+
+p <- ggpolar(pole = "N", max.lat = 90, min.lat = 0,
+             max.lon = 180, min.lon = -180,
+             plt.lat.labels = FALSE,
+             longitude.spacing = 60,
+             land.fill.colour = "#F2F2F2",
+             land.outline.colour = "Black" ) +
+  geom_tile(data = rich_df, aes(x = x, y = y, fill = fill)) +
+  scale_fill_identity() +
+  #annotate("text", x = 0, y = 135, label = "New vs Old World Richness", size = 5, fontface = "bold") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+print(p)
+
+        
+bivariate_color_scale1 <- bivariate_color_scale %>%
+  separate(group, into = c("new", "old"), sep = " - ", convert = TRUE) %>%
+  mutate(
+    new = as.integer(new),
+    old = as.integer(old)
+  )
+
+legend <- ggplot(data = bivariate_color_scale1) +
+  geom_tile(mapping = aes(x = new, y = old, fill = fill)) +
+  scale_fill_identity() +
+  labs(x = "Higher richness in New World ⟶️", y = "Higher richness in Old World ⟶️") +
+  theme_void() +
+  theme(
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16, angle = 90),
+    plot.margin = margin(t = 10, r = 10, b = 30, l = 10)
+  ) +
+  coord_fixed()
+print(legend)
+
+
+
+##b###########
+addHotspotCHEI <- function(r,legendName){
+  presentspdf <- crop(r,north) %>% resample(globalRaster) %>% 
+    as.data.frame(xy=T)
+  names(presentspdf)[3] <- 'sum' 
+  
+  p1 <- ggpolar(pole = "N", max.lat = 90, min.lat =0,
+                max.lon = 180, min.lon = -180,
+                plt.lat.labels=F,
+                longitude.spacing = 60, 
+                land.fill.colour = "#F2F2F2",
+                land.outline.colour = "Black" ) +
+    geom_point(data = presentspdf, aes(x = x, y = y, color = sum),
+               shape = 15, size = 0.5, alpha = 0.7) +
+    scale_color_gradientn(colors=paletteer_d("colorBlindness::Blue2DarkRed12Steps"),
+      name = legendName,
+      limits = range(presentspdf$sum, na.rm = TRUE)
+    )
+  
+  return(p1)
+}
+
+CHEI <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE_pIUCN/present/presentCHEI_2newold.tif')
+addHotspotCHEI(CHEI,'CHEI')
+
+
+
+
+
+
+
+
+
+##c-k#########
+addGrowthPlot <- function(future_path , sspName) {
+  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEI_2newold.tif')
+  present_r[is.na(present_r)] <- 0 
+  present_r <- mask(present_r, globalCountry)
+  
+  future_r <- rast(future_path) %>% mask(globalCountry)  #future_path<-futureSinglePaths[1]
+  
+  growth_r <- future_r - present_r
+  
+  df <- crop(growth_r, north) %>% resample(globalRaster) %>%
+    as.data.frame(xy = TRUE, na.rm = TRUE)
+  colnames(df)[3] <- "value"
+    
+  neg_vals <- df$value[df$value < 0]
+  pos_vals <- df$value[df$value > 0]
+  
+  pos_q <- c(1, 5, 10, 50, 400)  
+  neg_q <- c(-400, -50, -10, -5, -1) 
+  
+  breaks <- c(neg_q, 0, pos_q)
+  range_vals <- range(breaks)
+  values <- (breaks - range_vals[1]) / diff(range_vals)
+  
+  colors <- c(
+    "#08306b", "#2171b5", "#4292c6", "#6baed6", "#c6dbef",  #
+    "#f7f7f7",                                               # 
+    "#fee0d2", "#fcae91", "#fc9272", "#de2d26", "#a50f15"               # 
+  )
+  
+  library(RColorBrewer)
+  p <-   ggpolar(pole = "N", max.lat = 90, min.lat = 0,
+                 max.lon = 180, min.lon = -180,
+                 plt.lat.labels = FALSE,
+                 longitude.spacing = 60,
+                 land.fill.colour = "#F2F2F2",
+                 land.outline.colour = "Black") +
+    geom_tile(data = df, aes(x = x, y = y, fill = value)) +
+  scale_fill_gradientn(
+    colours = colors,
+    values = values,
+    breaks = breaks, #pretty(range(df$value), n = 7),
+    limits = range(breaks),
+    name = "ΔCHEI",
+    oob = scales::squish
+  )+
+    #annotate("text", x = 0, y = 135, label = sspName, size = 5, fontface = "bold") +
+    theme_minimal() +
+    theme(legend.position = "left")
+  
+
+  return(p)
+  
+}
+
+
+futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEI2newold_',full.names = T)
+scene_names2 <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEI2newold_") %>%  unique()
+
+futureRichPlot_list <- lapply(scene_names2, function(i) {
+  future_path <- grep(paste0("futureCHEI2newold_", i), futureSinglePaths, value = TRUE)
+  result <- addGrowthPlot(future_path,  sspName = i)
+  return(result)
+})
+
+patchwork::wrap_plots(futureRichPlot_list) +
+  patchwork::plot_layout(ncol = 3, guides = "collect") +
+  theme(
+    legend.position = "left",
+    legend.title = element_blank(),
+    legend.key = element_rect(fill = "white"),
+    legend.background = element_rect(fill = "white")
+  )
+
+
+
+
+##l-m#########
+crs <- '+proj=longlat +datum=WGS84'
+globalRaster <- rast(vals=1:259200,nrows=360, ncols=720,xmin=-180, xmax=180,ymin=-90, ymax=90,crs=crs)
+north <- ext(-180,180,0,90)
+world.map <- rnaturalearth::ne_countries(returnclass = "sf") |> dplyr::filter(continent != "Antarctica")
+globalCountry <- vect(world.map) 
+
+countRedPixelsByContinentSSP <- function(future_path, year, sspName) {
+  present_r <- rast('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/present/presentCHEI_2newold.tif')
+  present_r[is.na(present_r)] <- 0
+  present_r <- mask(present_r, globalCountry)
+  
+  future_r <- rast(future_path) %>% mask(globalCountry)
+  growth_r <- future_r - present_r
+
+  df <- resample(growth_r, globalRaster) %>%
+    as.data.frame(xy = TRUE, na.rm = TRUE)
+  colnames(df)[3] <- "value"
+  
+  df$zone <- dplyr::case_when(
+    df$y >= 66.5 ~ "Arctic",
+    df$y >= 23.5 & df$y < 66.5 ~ "Temperate",
+    df$y >= 0 & df$y < 23.5 ~ "Tropical",
+    TRUE ~ "Other"
+  )
+  
+
+  continentNew <- vect("/root/autodl-tmp/worldBorder/continentNew.shp") 
+  continentRaster <- rasterize(continentNew, globalRaster, field = "CONTINENT")
+  df$continent <- terra::extract(continentRaster, df[, c("x", "y")])[, 2]
+  # df_new <- df[df$continent %in% c("North America", "South America"), ]
+  # df_old <- df[df$continent %in% c("Africa", "Asia", "Europe"), ]
+  
+
+  df$group <- dplyr::case_when(
+    df$continent %in% c("North America", "South America") ~ "NewWorld",
+    df$continent %in% c("Africa", "Asia", "Europe") ~ "OldWorld",
+    TRUE ~ NA_character_
+  )
+  
+
+  pos_vals <- df$value[df$value > 0]
+  #pos_q <- quantile(pos_vals, probs = c(0.15, 0.7, 0.85, 0.95, 1), na.rm = TRUE)
+  #pos_q <- c(1, 5, 10, 30, 3000)
+  pos_q <- c(1, 5, 10, 50, 400)
+  red_levels <- cut(df$value,
+                    breaks = breaks <- c(0, pos_q),
+                    labels = c("#fee0d2", "#fcae91", "#fc9272", "#de2d26", "#a50f15"),
+                    include.lowest = TRUE)
+  
+  neg_vals <- df$value[df$value < 0]
+  neg_q <- c(-400, -50, -10, -5, -1)
+  blue_levels <- cut(df$value,
+                    breaks = breaks <- c(neg_q, 0),
+                    labels = c("#08306b", "#2171b5", "#4292c6", "#6baed6", "#c6dbef"),
+                    include.lowest = TRUE)
+  
+  df$colorLevel <- NA
+  df$colorLevel[df$value > 0] <- as.character(red_levels[df$value > 0])
+  df$colorLevel[df$value < 0] <- as.character(blue_levels[df$value < 0])
+  
+  df_new <- df[df$group == "NewWorld" & !is.na(df$colorLevel), ]
+  df_old <- df[df$group == "OldWorld" & !is.na(df$colorLevel), ]
+  
+  count_df <- df %>%
+    dplyr::filter(!is.na(colorLevel), !is.na(group)) %>%
+    dplyr::group_by(ssp = sspName, year = year, zone, group, colorLevel) %>%
+    dplyr::summarise(pixel_count = dplyr::n(), .groups = "drop")
+
+  return(list(
+    count_df = count_df,
+    df_new = df_new,
+    df_old = df_old
+  ))
+  
+  return(result)
+}
+
+
+futureSinglePaths <- list.files('/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/futureSingle/', pattern = 'futureCHEI2newold_',full.names = T)
+scene_names <- basename(futureSinglePaths) %>%  str_remove(".tif$") %>%  str_remove("^futureCHEI2newold_") %>%  unique()
+scene_names2 <- unique(scene_names[!grepl("ssp245", scene_names)])
+
+future_stats <- do.call(rbind, lapply(scene_names2, function(i) {
+  future_path <- grep(paste0("futureCHEI2newold_", i), futureSinglePaths, value = TRUE)
+  year <- stringr::str_extract(i, "\\d{4}")
+  ssp <- stringr::str_extract(i, "ssp\\d{3}")
+  countRedPixelsByContinentSSP(future_path, year = as.integer(year), sspName = ssp)
+}))
+
+
+color_levels <- c("#a50f15", "#de2d26", "#fc9272", "#fcae91", "#fee0d2",
+                  "#08306b", "#2171b5", "#4292c6", "#6baed6", "#c6dbef")
+
+count_df <- dplyr::bind_rows(future_stats) %>% dplyr::select(year, group, ssp, zone, colorLevel, pixel_count)
+
+stats_df3 <- count_df %>%
+  dplyr::filter(zone == "Arctic") %>%
+  tidyr::complete(
+    year, group, ssp, zone,
+    colorLevel = color_levels,
+    fill = list(pixel_count = 0)
+  )
+
+stats_df3$colorLevel <- factor(stats_df3$colorLevel, levels = color_levels)
+
+stats_df3$groupedColor <- dplyr::case_when(
+  stats_df3$colorLevel %in% c("#fee0d2", "#fcae91", "#fc9272", "#de2d26", "#a50f15") ~ "RedGroup",
+  stats_df3$colorLevel %in% c("#08306b", "#2171b5", "#4292c6", "#6baed6", "#c6dbef") ~ "BlueGroup",
+  TRUE ~ NA_character_
+)
+
+stats_df3$groupedColor <- factor(stats_df3$groupedColor, levels = c("RedGroup", "BlueGroup"))
+
+stats_df3$year <- factor(stats_df3$year, levels = c("2081", "2061", "2041"))
+
+stats_df3$group <- dplyr::case_when(
+  stats_df3$group == "NewWorld" ~ "Arctic (New World)",
+  stats_df3$group == "OldWorld" ~ "Arctic (Old World)",
+  TRUE ~ stats_df3$group
+)
+
+stats_df3$SSP <- dplyr::case_when(
+  stats_df3$ssp == "ssp126" ~ "SSP1-2.6",
+  stats_df3$ssp == "ssp370" ~ "SSP3-7.0",
+  stats_df3$ssp == "ssp585" ~ "SSP5-8.5",
+  TRUE ~ stats_df3$ssp
+)
+
+stats_df3$group <- factor(stats_df3$group, levels = c("Arctic (Americas)", "Arctic (Eurasia)"))
+stats_df3 <- na.omit(stats_df3)
+stats_df3$stackGroup <- stats_df3$groupedColor
+named_colors <- setNames(color_levels, color_levels)
+
+ggplot(stats_df3, aes(
+  y = year,
+  x = pixel_count,
+  fill = colorLevel,
+  group = stackGroup
+)) +
+  geom_bar(
+    stat = "identity",
+    position = position_dodge(width = 0.8),
+    width = 0.7
+  ) +
+  facet_grid(group ~ ssp) +
+  scale_fill_manual(values = named_colors) +
+  labs(
+    title = "Growth Dominance in Arctic",
+    x = "Pixel Count",
+    y = "Year",
+    fill = "Color Level"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.y = element_text(size = 13),
+    axis.text.x = element_text(size = 13),
+    strip.text = element_text(size = 15),
+    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    panel.spacing = unit(1.5, "lines")
+  )
+
+stats_df3$x_mirror <- dplyr::case_when(
+  stats_df3$groupedColor == "BlueGroup" ~ -stats_df3$pixel_count,
+  stats_df3$groupedColor == "RedGroup" ~ stats_df3$pixel_count,
+  TRUE ~ 0
+)
+
+#fwrite(stats_df3, "/root/autodl-tmp/allBirdMonth/result_summer/SR_WAE/stats_deltaCHEIArctic.csv")
+
+
+stats_df3$y <- as.numeric(factor(stats_df3$year, levels = c("2081", "2061", "2041")))
+stats_df3$ylabel <- stats_df3$year
+
+ggplot() +
+  geom_bar(
+    data = stats_df3,
+    aes(x = y, y = x_mirror, fill = colorLevel),
+    stat = "identity",
+    position = "stack"
+  ) +
+  facet_grid(group ~ SSP) +
+  scale_fill_manual(values = color_levels) +
+  geom_hline(yintercept = 0, color = "black")+
+  theme_bw() +
+  labs(x = "Year", y = "Pixel Count") +
+  scale_y_continuous(
+    breaks = seq(-2000, 5000, 2000),
+    labels = abs(seq(-2000, 5000, 2000)),
+    limits = c(-1000, 5000)
+  ) +
+  scale_x_continuous(
+    breaks = 1:3,
+    labels = c("2081-2100", "2061-2080", "2041-2060"),
+    expand = c(0, 0),
+    limits = c(0.3, 3.7)
+  ) +
+  coord_flip() +
+  theme_bw() +
+  theme(
+    #axis.text.y = element_text(size = 13),
+    axis.text.y = element_text(angle=60,hjust = 0.9,size=13),
+    axis.text.x = element_text(size = 13),
+    strip.text = element_text(size = 15),
+    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    panel.spacing = unit(1.5, "lines")
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
