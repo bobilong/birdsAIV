@@ -199,7 +199,8 @@ pspNum <- ggplot() +
   geom_spatraster(data = spNumTif) +
   geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
   theme_void()+
-  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white')+
+  scale_fill_viridis_c(option = "D", na.value = "white", values = c(0, 0.3, 1), direction = -1) +
+  #scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white')+
   labs(fill="Species Richness")+
   theme(
     plot.title = element_text(hjust=0.5),
@@ -218,7 +219,8 @@ pSRCV<-ggplot() +
   geom_spatraster(data = sp_cv) +  #sp_cv
   geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
   theme_bw()+
-  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.3, 1))+
+  scale_color_viridis_d(option = "D", na.value = "white", direction = -1) +
+  #scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.3, 1))+
   #labs(title = "CV")+
   theme(
     axis.text = element_text(size=12),
@@ -283,7 +285,7 @@ valisEntropy <- valisEntropy[valisEntropy$name != "Antarctica",]   #
 Vborder1<-factor(valisEntropy$name,levels = c("Oriental","Ethiopian","Australian","Neotropical","Nearctic","Palearctic")) #
 
 ggplot(valisEntropy, aes(x = Vborder1, y = sum,fill=Vborder1)) + #,
-  scale_fill_manual(values = c("#45F3DD","#F6BA26","#E0312D","#3ca1f9","#8204FB","#49FB18"))+
+  scale_fill_viridis_c(option = "C", na.value = "white", values = c(0, 0.75, 1)) + #scale_fill_manual(values = c("#45F3DD","#F6BA26","#E0312D","#3ca1f9","#8204FB","#49FB18"))+
   geom_hline(yintercept = mean(valisEntropy$sum), size = 1, color = "grey", linetype = "dashed")+
   geom_violin(alpha=0.5,position = position_dodge(width = 0.01), scale = 'width') +
   geom_boxplot(alpha=0.8,width=0.45,position=position_dodge(width=0.1),size=0.75,outlier.colour = NA)+
@@ -301,7 +303,7 @@ pAE <- ggplot() +
   geom_spatraster(data = AE) +
   geom_spatvector(data=coast,fill=NA)+coord_sf(crs = crs,xlim=c(-160,165),ylim=c(-56,90))+
   theme_bw()+
-  scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.75, 1))+
+  scale_color_viridis_c(option = "C", na.value = "white") + #scale_fill_gradientn(colours = paletteer_c("grDevices::Zissou 1", 30) ,na.value='white',values = c(0, 0.75, 1))+
   #scale_fill_brewer(palette = "RdYlGn")+
   labs(fill="Species Richness")+
   theme(
@@ -324,7 +326,7 @@ names(AE_df)<-c("lon","lat","sum")
 
 pAE2<-ggplot(AE_df,aes(x=sum, y=lat),)+
   geom_pointdensity(adjust = 4, size = 0.5)+                              # 
-  scale_color_distiller(palette = "Spectral", direction = -1)+ # 
+  scale_color_viridis_c(option = "C", na.value = "white") + #scale_color_distiller(palette = "Spectral", direction = -1)+ # 
   xlab('WAE')+
   xlim(c(0,5.5))+
   ylim(c(-56,90))+
