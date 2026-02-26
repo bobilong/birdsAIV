@@ -1,4 +1,4 @@
-# Global Avian Influenza Risk: Waterbird entropy for targeted surveillance
+# Mapping Global Avian Influenza Risk Patterns Through Waterbird Activity Entropy
 
 **Version**: Code of WAE (Version 202507).R 
 
